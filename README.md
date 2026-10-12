@@ -1,6 +1,6 @@
 <div align="center">
 
-# DSH Git Plugin
+# DSH LazyGit Plugin
 
 **See your Git history and changes. Run everyday Git operations with a few clicks.**
 
@@ -8,18 +8,18 @@ A visual Git workbench inside DeepSeek Harness Web.
 
 ![DeepSeek Harness](https://img.shields.io/badge/DeepSeek%20Harness-Developer%20Preview-4f46e5)
 ![Web profile](https://img.shields.io/badge/profile-Web-0ea5e9)
-[![npm version](https://img.shields.io/npm/v/dsh-easygit-plugin.svg)](https://www.npmjs.com/package/dsh-easygit-plugin)
-[![GitHub repository](https://img.shields.io/badge/GitHub-Repository-181717?logo=github)](https://github.com/IT-coder-Yy/dsh-git-plugin)
+[![npm version](https://img.shields.io/npm/v/dsh-lazygit-plugin.svg)](https://www.npmjs.com/package/dsh-lazygit-plugin)
+[![GitHub repository](https://img.shields.io/badge/GitHub-Repository-181717?logo=github)](https://github.com/IT-coder-Yy/dsh-lazygit-plugin)
 [![MIT License](https://img.shields.io/badge/license-MIT-22c55e)](LICENSE)
 [![LINUX DO](https://img.shields.io/badge/community-LINUX%20DO-f59e0b)](https://linux.do)
 
-English · [简体中文](README.zh-CN.md)
+English · [Simplified Chinese](README.zh-CN.md)
 
 </div>
 
 ## Preview
 
-![DSH Git Plugin changes view and quick Git actions](./assets/preview.png)
+![DSH LazyGit Plugin changes view and quick Git actions](./assets/preview.png)
 
 ## Git you can see and use
 
@@ -29,7 +29,7 @@ English · [简体中文](README.zh-CN.md)
 
 | Area | What you can do |
 | --- | --- |
-| Changes | Review formatted or raw diffs; stage or unstage files; use **AI 生成** to draft a Conventional Commit with the current session model using staged changes and project context, then edit and commit. |
+| Changes | Review formatted or raw diffs; stage or unstage files; use **AI Generate** to draft a Conventional Commit with the current session model using staged changes and project context, then edit and commit. |
 | Commit history | Browse the graph, inspect messages, parents, changed files and diffs; amend, undo, or revert commits. |
 | Branches | Search, create, switch, and delete local branches; inspect remote branches and tags. |
 | Merge branches | Preview incoming commits and changes; choose normal, fast-forward-only, or squash merge. |
@@ -37,15 +37,17 @@ English · [简体中文](README.zh-CN.md)
 | Stashes | Stash all or selected files, optionally including untracked files; review, apply, pop, drop, or create a branch from a stash. |
 | Sync | Inspect upstream and ahead/behind counts; fetch, fast-forward pull, push, set upstream, and manage Rebase. |
 
-For more involved workflows, chat with the independent Git assistant in **建议**. It inherits and receives updates from the main conversation while keeping its model settings independent. Review generated commands before execution; results return to the assistant, and stale proposals are rejected when the repository changes. Failed operations retain command output and repository diagnostics for follow-up analysis.
+For more involved workflows, chat with the independent Git assistant in **Suggestions**. It inherits and receives updates from the main conversation while keeping its model settings independent. Review generated commands before execution; results return to the assistant, and stale proposals are rejected when the repository changes. Failed operations retain command output and repository diagnostics for follow-up analysis.
 
 ## Quick start
 
 Requires Git, Node.js `^22.19.0 || >=24.0.0`, and DeepSeek Harness Web.
 
+If you installed `dsh-easygit-plugin` before, stop the Harness backend and run `dsh plugin --profile web remove dsh-easygit-plugin` before installing the new package below. Existing assistant session links and proposal records are imported automatically. For a manual installation, also update your mount configuration to match `lazygit.cordis.yml`. Refresh the browser after restarting.
+
 ```sh
 npm install -g @deepseek-ai/dsh@0.2.0-rc.2
-dsh plugin --profile web add dsh-easygit-plugin@0.4.3
+dsh plugin --profile web add dsh-lazygit-plugin@0.5.0
 dsh web
 ```
 
@@ -57,14 +59,14 @@ If pnpm blocks installation because the package was recently published, add the 
 
 ```yaml
 minimumReleaseAgeExclude:
-  - dsh-easygit-plugin
+  - dsh-lazygit-plugin
 ```
 
 ## Common workflows
 
 ### Amend, undo, or revert a commit
 
-Open **变更 → 提交撤销与修正 (Changes → Commit edits)** for the latest commit, or click a commit in **提交记录 (Commit history)**.
+Open **Changes → Commit edits** for the latest commit, or click a commit in **Commit history**.
 
 - **Edit the latest message** changes only the message, preserving staged and working-tree changes.
 - **Amend the latest commit** adds all staged changes while keeping its message.
@@ -75,40 +77,40 @@ These actions require confirmation. Amend and undo rewrite local history and can
 
 ### Preview and merge branches
 
-Open **合并分支 (Merge branches)**, select a local or fetched remote branch, and preview its incoming commits and file changes. Choose normal merge, fast-forward only, or squash. Squash stages the combined changes for you to finish as one commit.
+Open **Merge branches**, select a local or fetched remote branch, and preview its incoming commits and file changes. Choose normal merge, fast-forward only, or squash. Squash stages the combined changes for you to finish as one commit.
 
 Merging requires a clean worktree. Remote sources use locally fetched references, so fetch first for current data. The preview compares the source with the common ancestor; it does not predict conflicts or show the final merge result. A changed branch tip requires a new preview. You can abort an unfinished merge, including squash, but cannot abort a completed merge.
 
 ### Resolve conflicts visually
 
-In **冲突解决 (Conflict resolution)**, compare the current side, incoming side, and editable result with line numbers and commit references. Choose either side or both per block, or edit the result; then **save → mark resolved → continue**. Merge, Rebase, Cherry-pick, and Revert use this workflow. Abort and supported skip actions require confirmation.
+In **Conflict resolution**, compare the current side, incoming side, and editable result with line numbers and commit references. Choose either side or both per block, or edit the result; then **save → mark resolved → continue**. Merge, Rebase, Cherry-pick, and Revert use this workflow. Abort and supported skip actions require confirmation.
 
 During Rebase, the current side is the target branch plus replayed commits; the incoming side is the commit being replayed. Unresolved markers block resolution, and changed files invalidate an old snapshot. Binary conflicts support whole-side selection; text editing supports up to 48 KiB per version. Use external tools for larger files, symlinks, or submodules. Unsaved drafts last only for the current page and do not survive a reload.
 
 ### Save work with Stash
 
-In **贮藏 (Stashes)**, select all or individual files and optionally include untracked files. Selected-file stashes preserve unrelated changes. Review a stash before applying it; **apply** retains it, while **pop** removes it only after successful restoration. Conflicts retain the stash and link to Conflict resolution. Creating a branch from a stash requires a clean worktree and starts at the stash's original base.
+In **Stashes**, select all or individual files and optionally include untracked files. Selected-file stashes preserve unrelated changes. Review a stash before applying it; **apply** retains it, while **pop** removes it only after successful restoration. Conflicts retain the stash and link to Conflict resolution. Creating a branch from a stash requires a clean worktree and starts at the stash's original base.
 
 ## Update, remove, or install from source
 
 ```sh
 # Update / remove
-dsh plugin --profile web update dsh-easygit-plugin
-dsh plugin --profile web remove dsh-easygit-plugin
+dsh plugin --profile web update dsh-lazygit-plugin
+dsh plugin --profile web remove dsh-lazygit-plugin
 ```
 
 After updating, restart the Harness backend and refresh the browser to load both Host and Client changes.
 
 ```sh
 # Install from source
-git clone https://github.com/IT-coder-Yy/dsh-git-plugin.git
-cd dsh-git-plugin
+git clone https://github.com/IT-coder-Yy/dsh-lazygit-plugin.git
+cd dsh-lazygit-plugin
 npm install
 npm run build
 dsh plugin --profile web add "${PWD}"
 ```
 
-You can also install directly from the repository with `dsh plugin --profile web add github:IT-coder-Yy/dsh-git-plugin`.
+You can also install directly from the repository with `dsh plugin --profile web add github:IT-coder-Yy/dsh-lazygit-plugin`.
 
 ## Compatibility
 
@@ -132,8 +134,8 @@ npm pack --dry-run --ignore-scripts
 CI also runs `npm run test:dsh` against each release above. To reproduce one version locally:
 
 ```sh
-npm install --prefix /tmp/easygit-dsh-check @deepseek-ai/dsh@0.2.1-alpha.2
-DSH_INSTALL_DIR=/tmp/easygit-dsh-check npm run test:dsh
+npm install --prefix /tmp/lazygit-dsh-check @deepseek-ai/dsh@0.2.1-alpha.2
+DSH_INSTALL_DIR=/tmp/lazygit-dsh-check npm run test:dsh
 ```
 
 The smoke test uses and cleans up a temporary DSH_HOME and Git repository. It does not read existing sessions or call a model.

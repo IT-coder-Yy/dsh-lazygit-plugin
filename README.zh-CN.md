@@ -1,6 +1,6 @@
 <div align="center">
 
-# DSH Git Plugin
+# DSH LazyGit Plugin
 
 **看得清 Git 历史与变更，点几下就能完成日常 Git 操作。**
 
@@ -8,8 +8,8 @@
 
 ![DeepSeek Harness](https://img.shields.io/badge/DeepSeek%20Harness-Developer%20Preview-4f46e5)
 ![Web profile](https://img.shields.io/badge/profile-Web-0ea5e9)
-[![npm version](https://img.shields.io/npm/v/dsh-easygit-plugin.svg)](https://www.npmjs.com/package/dsh-easygit-plugin)
-[![GitHub repository](https://img.shields.io/badge/GitHub-Repository-181717?logo=github)](https://github.com/IT-coder-Yy/dsh-git-plugin)
+[![npm version](https://img.shields.io/npm/v/dsh-lazygit-plugin.svg)](https://www.npmjs.com/package/dsh-lazygit-plugin)
+[![GitHub repository](https://img.shields.io/badge/GitHub-Repository-181717?logo=github)](https://github.com/IT-coder-Yy/dsh-lazygit-plugin)
 [![MIT License](https://img.shields.io/badge/license-MIT-22c55e)](LICENSE)
 [![LINUX DO](https://img.shields.io/badge/%E7%A4%BE%E5%8C%BA-LINUX%20DO-f59e0b)](https://linux.do)
 
@@ -19,7 +19,7 @@
 
 ## 效果预览
 
-![DSH Git Plugin 变更视图与 Git 快捷操作](./assets/preview.png)
+![DSH LazyGit Plugin 变更视图与 Git 快捷操作](./assets/preview.png)
 
 ## Git 可视化，操作更简单
 
@@ -43,9 +43,11 @@
 
 需要 Git、Node.js `^22.19.0 || >=24.0.0` 和 DeepSeek Harness Web。
 
+如果之前安装过 `dsh-easygit-plugin`，请先停止 Harness 后端，执行 `dsh plugin --profile web remove dsh-easygit-plugin`，再按下方命令安装新包。已有助手会话关联和提议记录会自动迁移；手动挂载的用户还需按 `lazygit.cordis.yml` 更新挂载配置。重启后刷新浏览器即可。
+
 ```sh
 npm install -g @deepseek-ai/dsh@0.2.0-rc.2
-dsh plugin --profile web add dsh-easygit-plugin@0.4.3
+dsh plugin --profile web add dsh-lazygit-plugin@0.5.0
 dsh web
 ```
 
@@ -57,7 +59,7 @@ dsh web
 
 ```yaml
 minimumReleaseAgeExclude:
-  - dsh-easygit-plugin
+  - dsh-lazygit-plugin
 ```
 
 ## 常用工作流
@@ -93,22 +95,22 @@ Rebase 中，当前方是目标分支及已重放提交，传入方是正在重�
 
 ```sh
 # 更新 / 卸载
-dsh plugin --profile web update dsh-easygit-plugin
-dsh plugin --profile web remove dsh-easygit-plugin
+dsh plugin --profile web update dsh-lazygit-plugin
+dsh plugin --profile web remove dsh-lazygit-plugin
 ```
 
 更新后重启 Harness 后端并刷新浏览器，确保 Host 和 Client 均加载新版本。
 
 ```sh
 # 从源码安装
-git clone https://github.com/IT-coder-Yy/dsh-git-plugin.git
-cd dsh-git-plugin
+git clone https://github.com/IT-coder-Yy/dsh-lazygit-plugin.git
+cd dsh-lazygit-plugin
 npm install
 npm run build
 dsh plugin --profile web add "${PWD}"
 ```
 
-也可直接从仓库安装：`dsh plugin --profile web add github:IT-coder-Yy/dsh-git-plugin`。
+也可直接从仓库安装：`dsh plugin --profile web add github:IT-coder-Yy/dsh-lazygit-plugin`。
 
 ## 兼容性
 
@@ -132,8 +134,8 @@ npm pack --dry-run --ignore-scripts
 CI 另对上表四个 DSH 版本运行 `npm run test:dsh`。本地复现单个版本：
 
 ```sh
-npm install --prefix /tmp/easygit-dsh-check @deepseek-ai/dsh@0.2.1-alpha.2
-DSH_INSTALL_DIR=/tmp/easygit-dsh-check npm run test:dsh
+npm install --prefix /tmp/lazygit-dsh-check @deepseek-ai/dsh@0.2.1-alpha.2
+DSH_INSTALL_DIR=/tmp/lazygit-dsh-check npm run test:dsh
 ```
 
 测试使用临时 DSH_HOME 和 Git 仓库，结束后清理，不读取现有会话或调用模型。
