@@ -5,8 +5,9 @@ const fs = require('node:fs')
 const { helpers } = require('../lib')
 const { createRepo, cleanup, makeShell } = require('./helpers')
 
-function fixture(saved = {}) {
+function fixture(saved = {}, legacySaved = {}) {
   const listeners = {}, agents = new Map(), modelChanges = [], guards = []
+  const stores = { lazygit_chats: { links: saved }, easygit_chats: { links: legacySaved } }
   let counter = 0
   const tools = { schemas: scope => { assert.equal(typeof scope, 'object'); return ['read', 'shell', 'write', 'git_propose', 'git_repo_state', 'git_diff'].map(name => ({ name })) }, restrict: () => {}, guard: fn => guards.push(fn) }
   function agent(id, events = []) {
@@ -36,10 +37,15 @@ function fixture(saved = {}) {
   const services = {
     tools, agents: { get: id => agents.get(id) }, sessionController: controller,
     sessionQuery: { observeSession: async () => ({ projections: { values: { modelSelection: { next: structuredClone(model) } } }, [Symbol.dispose]() {} }) },
-    storage: { backend: { get: () => ({ kv: { open: async () => ({
-      loadAll: async () => ({ tables: { links: structuredClone(saved) } }),
-      putRecord: async (_, id, value) => { saved[id] = structuredClone(value) }, close: async () => {},
-    }) } }) } },
+    storage: { backend: { get: () => ({ kv: { open: async ({ name, tables }) => {
+      const records = stores[name] ??= {}
+      for (const table of tables) records[table] ??= {}
+      return {
+        loadAll: async () => ({ tables: structuredClone(records), global: null }),
+        putRecord: async (table, id, value) => { records[table][id] = structuredClone(value) },
+        deleteRecord: async (table, id) => { delete records[table][id] }, close: async () => {},
+      }
+    } } }) } },
   }
   const ctx = { get: key => services[key], on: (name, fn) => { listeners[name] = fn }, effect: () => {} }
   const service = new helpers.SideChatService(ctx)
@@ -61,6 +67,26 @@ test('并发打开幂等；同目录不同主会话隔离；仅初始化模型�
   assert.equal((await restored.open('main')).sessionId, first.sessionId)
   assert.equal(f.modelChanges.length, 2)
   await assert.rejects(f.service.open(first.sessionId), /嵌套/)
+})
+
+test('改名后沿用旧侧会话及已同步位置，新背景使用新标识', async () => {
+  const legacy = { main: { sessionId: 'existing-child', baseline: 0 } }
+  const f = fixture({}, legacy)
+  const child = f.agent('existing-child', [{ seq: 1, type: 'user/message', data: {
+    source: { kind: 'easygit-main-context', parent: 'main', through: 1 },
+    content: [{ type: 'text', text: '已同步背景' }],
+  } }])
+  f.parent.session.snapshotEvents().push({ seq: 1, type: 'user/message', data: { content: [{ type: 'text', text: '已同步背景' }] } })
+  assert.equal((await f.service.open('main')).sessionId, child.id)
+  assert.equal(child.inbox.nextStep.length, 0)
+  assert.deepEqual(f.saved, legacy)
+  assert.equal(f.guards[0]({ agent: child, name: 'read' }), undefined)
+  assert.match(f.guards[0]({ agent: child, name: 'shell' }), /点击执行/)
+  f.parent.session.snapshotEvents().push({ seq: 2, type: 'user/message', data: { content: [{ type: 'text', text: '新背景' }] } })
+  await f.service.open('main')
+  assert.equal(child.inbox.nextStep.length, 1)
+  assert.equal(child.inbox.nextStep[0].source.kind, 'lazygit-main-context')
+  assert.equal(child.inbox.nextStep[0].source.through, 2)
 })
 
 test('增量上下文不唤醒；不重复同步；取消后补齐；不复制模型设置或执行主会话命令', async () => {

@@ -45,7 +45,7 @@ try {
     if (paths.some(name => changes.some(file => file.path === name && file.status === '??') && !untracked.some(file => file.path === name))) {
       throw new Error('已删除或重命名的路径上存在未跟踪文件，请同时选择该文件并包含未跟踪文件');
     }
-    temporary = fs.mkdtempSync(path.join(os.tmpdir(), 'easygit-stash-'));
+    temporary = fs.mkdtempSync(path.join(os.tmpdir(), 'lazygit-stash-'));
     const isolated = { ...env, GIT_INDEX_FILE: path.join(temporary, 'index') };
     const base = git(['rev-parse', 'HEAD']).trim();
     git(['read-tree', base], { env: isolated });

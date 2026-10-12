@@ -314,7 +314,7 @@ export interface ProposalExecutionResponse extends ProposalCommandResponse {
   analysis?: AgentAnalysisRequest
 }
 
-export interface EasyGitRequestMap {
+export interface LazyGitRequestMap {
   'generate-commit-message': { sessionId: string }
   'side-chat': { sessionId: string }
   'get-commit-edit-state': { sessionId: string }
@@ -368,7 +368,7 @@ export interface EasyGitRequestMap {
   execute: { sessionId: string; proposalId: string; confirm?: boolean }
 }
 
-export interface EasyGitResponseMap {
+export interface LazyGitResponseMap {
   'generate-commit-message': ActionResult<{ message: string }>
   'side-chat': { ok: true; sessionId: string } | { ok: false; error: string }
   'get-commit-edit-state': ActionResult<CommitEditState>
@@ -422,6 +422,6 @@ export interface EasyGitResponseMap {
   execute: ProposalExecutionResponse
 }
 
-export type EasyGitAction = keyof EasyGitRequestMap
-export type EasyGitRequest<A extends EasyGitAction = EasyGitAction> = { action: A } & EasyGitRequestMap[A]
-export type EasyGitResponse<A extends EasyGitAction> = EasyGitResponseMap[A]
+export type LazyGitAction = keyof LazyGitRequestMap
+export type LazyGitRequest<A extends LazyGitAction = LazyGitAction> = { action: A } & LazyGitRequestMap[A]
+export type LazyGitResponse<A extends LazyGitAction> = LazyGitResponseMap[A]

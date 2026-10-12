@@ -1,11 +1,11 @@
 const React = require('react') as typeof import('react')
-import type { DiffResult, EasyGitAction, EasyGitRequest, EasyGitResponse, RepositoryFile, StashDetail, StashFile, StashSummary } from '../shared/contracts'
+import type { DiffResult, LazyGitAction, LazyGitRequest, LazyGitResponse, RepositoryFile, StashDetail, StashFile, StashSummary } from '../shared/contracts'
 import { beginTrackedRequest, cancelTrackedRequest, isAbortError, isTrackedRequestCurrent, mutationCommand, type RequestSlot } from './view-model'
 
 interface Props {
   sessionId: string
   revision: number
-  rpc<A extends EasyGitAction>(request: EasyGitRequest<A>, signal?: AbortSignal): Promise<EasyGitResponse<A>>
+  rpc<A extends LazyGitAction>(request: LazyGitRequest<A>, signal?: AbortSignal): Promise<LazyGitResponse<A>>
   onChanged(): void
   onConflicts(): void
   onCommand(label: string, command: string): (success: boolean) => void
@@ -117,7 +117,7 @@ export function GitStashesTab(props: Props) {
     const command = mutationCommand(action, payload)!
     const complete = props.onCommand(command.label, command.command)
     try {
-      const response = await props.rpc({ action, sessionId: props.sessionId, operationId: 'ui:' + action + ':' + Date.now().toString(36) + ':' + Math.random().toString(36).slice(2), ...payload } as EasyGitRequest<StashMutation>)
+      const response = await props.rpc({ action, sessionId: props.sessionId, operationId: 'ui:' + action + ':' + Date.now().toString(36) + ':' + Math.random().toString(36).slice(2), ...payload } as LazyGitRequest<StashMutation>)
       complete(response.ok)
       // Even a failed apply/pop may have changed files or produced conflicts.
       props.onChanged()

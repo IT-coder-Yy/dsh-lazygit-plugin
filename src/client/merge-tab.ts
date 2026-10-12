@@ -1,10 +1,10 @@
 const React = require('react') as typeof import('react')
-import type { ConflictState, EasyGitAction, EasyGitRequest, EasyGitResponse, MergeMode, MergePreview, RepositoryReferences } from '../shared/contracts'
+import type { ConflictState, LazyGitAction, LazyGitRequest, LazyGitResponse, MergeMode, MergePreview, RepositoryReferences } from '../shared/contracts'
 
 interface Props {
   sessionId: string
   revision: number
-  rpc<A extends EasyGitAction>(request: EasyGitRequest<A>, signal?: AbortSignal): Promise<EasyGitResponse<A>>
+  rpc<A extends LazyGitAction>(request: LazyGitRequest<A>, signal?: AbortSignal): Promise<LazyGitResponse<A>>
   onChanged(): void
   onConflicts(): void
   onCommand(label: string, command: string): (success: boolean) => void

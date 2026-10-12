@@ -4,8 +4,8 @@ const React = require('react')
 
 export type Dispose = () => void
 
-const WORKBENCH_ID = 'dsh-easygit-plugin'
-const WORKBENCH_KIND = 'easygit'
+const WORKBENCH_ID = 'dsh-lazygit-plugin'
+const WORKBENCH_KIND = 'lazygit'
 
 /** Register a native tab without taking over the host's layout or other tabs. */
 export function registerWorkbench(ctx: AnyRecord, renderPanel: (props: {
@@ -22,9 +22,9 @@ export function registerWorkbench(ctx: AnyRecord, renderPanel: (props: {
     kind: WORKBENCH_KIND,
     title: () => 'Git 工作台',
     guide: [{ id: WORKBENCH_KIND, order: 30, title: () => 'Git 工作台', description: () => '查看仓库、提交记录和 Git 操作建议' }],
-  }), 'easygit: tab type')
+  }), 'lazygit: tab type')
   slots.inject('sidebar.right.pane.tab', () => slots.register(
-    { name: 'sidebar.right.pane.tab', key: WORKBENCH_ID, children: { 'easygit.chat': { kind: 'single', scope: 'session' } } },
+    { name: 'sidebar.right.pane.tab', key: WORKBENCH_ID, children: { 'lazygit.chat': { kind: 'single', scope: 'session' } } },
     (props: AnyRecord) => {
       const { tab } = props.useTabInfo()
       if (!tab.visible) return null
@@ -39,7 +39,7 @@ export function registerWorkbench(ctx: AnyRecord, renderPanel: (props: {
       })
     },
   ))
-  slots.inject('easygit.chat', () => slots.register({ name: 'easygit.chat' }, EmbeddedChat))
+  slots.inject('lazygit.chat', () => slots.register({ name: 'lazygit.chat' }, EmbeddedChat))
   return (sessionId) => {
     if (!sessionId) throw new Error('当前会话不可用，无法打开 Git 工作台')
     sidebar.openTabIn(sessionId, WORKBENCH_KIND)

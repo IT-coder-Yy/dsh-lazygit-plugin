@@ -14,8 +14,13 @@ const git = (...args) => execFileSync('git', args, { encoding: 'utf8', maxBuffer
 const hash = value => crypto.createHash('sha256').update(value).digest('hex');
 const exists = file => fs.existsSync(file);
 const gitPath = name => git('rev-parse', '--git-path', name).trim();
+// Finish an in-flight squash from the previous plugin without changing read-only requests.
+function squashPath() {
+  const file = gitPath('lazygit-squash.json');
+  return exists(file) ? file : gitPath('easygit-squash.json');
+}
 function squashState() {
-  const file = gitPath('easygit-squash.json');
+  const file = squashPath();
   if (!exists(file) || !exists(gitPath('SQUASH_MSG'))) return null;
   const saved = JSON.parse(fs.readFileSync(file, 'utf8'));
   // A commit or branch switch outside the workbench ends our ownership.
@@ -201,13 +206,13 @@ function main() {
     if (snapshot.token !== input.token) fail('分支已变化，请重新预览后合并');
     if (ancestor(snapshot.sourceHead, snapshot.head)) return state();
     if (input.mode === 'squash') {
-      fs.writeFileSync(gitPath('easygit-squash.json'), JSON.stringify({ head: snapshot.head, branch: 'refs/heads/' + snapshot.branch, sourceHead: snapshot.sourceHead }));
+      fs.writeFileSync(gitPath('lazygit-squash.json'), JSON.stringify({ head: snapshot.head, branch: 'refs/heads/' + snapshot.branch, sourceHead: snapshot.sourceHead }));
     }
     // Explicit flags keep user merge.ff / branch mergeOptions from changing the selected mode.
     try {
       git('-c', 'merge.autoStash=false', 'merge', '--no-edit', '--no-autostash', '--no-overwrite-ignore', ...(input.mode === 'squash' ? ['--squash', '--ff', '--no-commit'] : input.mode === 'ff-only' ? ['--ff-only', '--no-squash', '--commit'] : ['--ff', '--no-squash', '--commit']), snapshot.sourceHead);
     } catch (error) {
-      if (input.mode === 'squash' && !entries().length && !git('status', '--porcelain').trim()) fs.unlinkSync(gitPath('easygit-squash.json'));
+      if (input.mode === 'squash' && !entries().length && !git('status', '--porcelain').trim()) fs.unlinkSync(gitPath('lazygit-squash.json'));
       throw error;
     }
     return state();
@@ -225,7 +230,7 @@ function main() {
       const parent = path.dirname(full);
       fs.mkdirSync(parent, { recursive: true });
       const mode = exists(full) ? fs.statSync(full).mode : parseInt(before.ours.mode || before.theirs.mode || '100644', 8);
-      const temp = path.join(parent, '.easygit-' + crypto.randomUUID());
+      const temp = path.join(parent, '.lazygit-' + crypto.randomUUID());
       try {
         fs.writeFileSync(temp, content, { flag: 'wx', mode });
         if (detail(input.path).token !== before.token) fail('保存前文件发生变化，请刷新');
@@ -269,7 +274,7 @@ function main() {
       const saved = squashState();
       if (input.mode === 'abort') git('reset', '--merge', saved.head);
       else git('commit', '--no-edit', '-F', gitPath('SQUASH_MSG'));
-      fs.unlinkSync(gitPath('easygit-squash.json'));
+      fs.unlinkSync(squashPath());
       if (exists(gitPath('SQUASH_MSG'))) fs.unlinkSync(gitPath('SQUASH_MSG'));
     } else git(input.kind, '--' + input.mode);
     return state();

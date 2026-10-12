@@ -6,11 +6,11 @@ import { openSideChat, sideChatSessions } from './side-chat'
 import { rpc } from './rpc'
 import { parseConflictBlocks, chooseConflictBlock, conflictLineRanges } from './conflict-model'
 /**
- * dsh-easygit-plugin Client half as a static Cordis plugin package.
+ * dsh-lazygit-plugin Client half as a static Cordis plugin package.
  *
  * The build script wraps this module in Harness's ModuleLoader factory format;
  * source code exports only the Cordis plugin object. Client-to-Host traffic
- * uses same-origin POST /easygit actions. The workbench is mounted in the
+ * uses same-origin POST /lazygit actions. The workbench is mounted in the
  * native right-sidebar tab and controlled from the composer tool row.
  */
 const React = require('react')
@@ -56,8 +56,8 @@ import type {
   CommitDiffResult,
   CommitSummary,
   DiffResult,
-  EasyGitAction,
-  EasyGitRequest,
+  LazyGitAction,
+  LazyGitRequest,
   GitFailureContext,
   ProposalExecutionResponse,
   ProposalStateResponse,
@@ -125,7 +125,7 @@ interface CommitTabProps {
 interface SyncTabProps extends RepositoryTabProps {}
 
     function rpcRepositoryMutation(action: RepositoryMutationAction, sessionId: string, payload: AnyRecord = {}): Promise<ActionResult<RepositorySummary>> {
-      const request = { action, sessionId, operationId: operationId(action), ...payload } as EasyGitRequest<RepositoryMutationAction>
+      const request = { action, sessionId, operationId: operationId(action), ...payload } as LazyGitRequest<RepositoryMutationAction>
       return rpc(request) as Promise<ActionResult<RepositorySummary>>
     }
 
@@ -135,9 +135,9 @@ interface SyncTabProps extends RepositoryTabProps {}
 
     function injectStyles() {
       if (typeof document === 'undefined') return () => {}
-      if (document.getElementById('dsh-easygit-plugin-css')) return () => {}
+      if (document.getElementById('dsh-lazygit-plugin-css')) return () => {}
       const tag = document.createElement('style')
-      tag.id = 'dsh-easygit-plugin-css'
+      tag.id = 'dsh-lazygit-plugin-css'
       tag.textContent = `
         .gg-conflict-files { display: flex; flex-direction: column; gap: 6px; margin: 12px 0; }
         .gg-conflict-files button { text-align: left; overflow-wrap: anywhere; }
@@ -376,7 +376,7 @@ interface SyncTabProps extends RepositoryTabProps {}
           --gg-ease: cubic-bezier(.23, 1, .32, 1);
         }
         .gg-workbench {
-          container-name: easygit-workbench;
+          container-name: lazygit-workbench;
           container-type: inline-size;
           border-left-color: var(--gg-border-strong);
           color: var(--gg-text);
@@ -655,18 +655,18 @@ interface SyncTabProps extends RepositoryTabProps {}
 
         /* Container width, not viewport width, decides when the two-pane change view is safe. */
         .gg-change-layout { display: flex; }
-        @container easygit-workbench (min-width: 560px) {
+        @container lazygit-workbench (min-width: 560px) {
           .gg-change-layout { display: grid; grid-template-columns: minmax(210px, 36%) minmax(0, 1fr); align-items: stretch; }
           .gg-diff { min-height: 0; }
         }
-        @container easygit-workbench (max-width: 380px) {
+        @container lazygit-workbench (max-width: 380px) {
           .gg-workbench-head { min-height: 74px; padding: 11px 12px; }
           .gg-workbench-body { padding-right: 8px; padding-left: 8px; }
           .gg-tabs { margin-right: -8px; margin-left: -8px; padding-right: 8px; padding-left: 8px; }
           .gg-tab { padding-right: 8px; padding-left: 8px; }
           .gg-sync-grid { grid-template-columns: 1fr; }
         }
-        @container easygit-workbench (max-width: 520px) {
+        @container lazygit-workbench (max-width: 520px) {
           .gg-tab-toolbar .gg-repository-identity, .gg-tab-toolbar .gg-section-heading { width: 100%; flex-basis: 100%; }
           .gg-repository-name { font-size: 15px; }
           .gg-branch-form { display: grid; grid-template-columns: 1fr; }
@@ -1759,7 +1759,7 @@ interface SyncTabProps extends RepositoryTabProps {}
         setBusy(true)
         setMessage('')
         setDiagnostics('')
-        const request = { action, sessionId, operationId: operationId(action), ...payload } as EasyGitRequest<EasyGitAction>
+        const request = { action, sessionId, operationId: operationId(action), ...payload } as LazyGitRequest<LazyGitAction>
         return (rpc(request) as Promise<AnyRecord>)
           .then(async (response) => {
             if (!response || response.ok !== true) {
@@ -2215,7 +2215,7 @@ interface SyncTabProps extends RepositoryTabProps {}
               }
             }
           })
-          .catch((err) => { console.log('easygit state 调用失败', errorText(err)) })
+          .catch((err) => { console.log('lazygit state 调用失败', errorText(err)) })
       }
 
       React.useEffect(() => {
@@ -2454,7 +2454,7 @@ interface SyncTabProps extends RepositoryTabProps {}
     const plugin = {
       inject: ['slots', 'timer', 'sidebarRight', 'sidebarRightTabs', 'sessions', 'conversation'],
       apply(ctx: AnyRecord) {
-        if (typeof ctx.effect === 'function') ctx.effect(injectStyles, 'easygit: styles')
+        if (typeof ctx.effect === 'function') ctx.effect(injectStyles, 'lazygit: styles')
         else injectStyles()
 
         const slots = ctx.get('slots')

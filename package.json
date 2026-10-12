@@ -1,6 +1,6 @@
 {
-  "name": "dsh-easygit-plugin",
-  "version": "0.4.3",
+  "name": "dsh-lazygit-plugin",
+  "version": "0.5.0",
   "description": "面向 DeepSeek Harness Web 的可视化 Git 工作台，支持查看仓库状态与提交记录、快捷执行常用 Git 操作，以及安全运行自然语言生成的分步骤命令提议。",
   "license": "MIT",
   "main": "lib/index.js",
@@ -18,7 +18,7 @@
   },
   "dsh": {
     "bundle": {
-      "patch": "./easygit.cordis.yml"
+      "patch": "./lazygit.cordis.yml"
     },
     "client": {
       "platform": "web",
@@ -41,17 +41,17 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/IT-coder-Yy/dsh-git-plugin.git"
+    "url": "git+https://github.com/IT-coder-Yy/dsh-lazygit-plugin.git"
   },
-  "homepage": "https://github.com/IT-coder-Yy/dsh-git-plugin#readme",
+  "homepage": "https://github.com/IT-coder-Yy/dsh-lazygit-plugin#readme",
   "bugs": {
-    "url": "https://github.com/IT-coder-Yy/dsh-git-plugin/issues"
+    "url": "https://github.com/IT-coder-Yy/dsh-lazygit-plugin/issues"
   },
   "files": [
     "assets/preview.png",
     "lib/*.js",
     "lib/types/**/*.d.ts",
-    "easygit.cordis.yml",
+    "lazygit.cordis.yml",
     "README.md",
     "README.zh-CN.md",
     "SECURITY.md",

@@ -1,14 +1,14 @@
-# dsh-easygit-plugin composition mount patch
+# dsh-lazygit-plugin composition mount patch
 #
-# Temporary use: dsh web --patch ./easygit.cordis.yml
+# Temporary use: dsh web --patch ./lazygit.cordis.yml
 # Persistent use: merge this patch into the profile's cordis.patch.yml, or into
 # $DSH_HOME/cordis.patch.yml for all profiles. Install this package first with
-# dsh plugin --profile <name> add dsh-easygit-plugin (or an equivalent command).
+# dsh plugin --profile <name> add dsh-lazygit-plugin (or an equivalent command).
 #
 # package.json's dsh.bundle.patch only applies to packages listed in
 # dsh.profile.bundles. A composition-row installation must use --patch or
 # cordis.patch.yml. New top-level plugin rows must use insert; a direct
-# `- id: easygit / name: ...` entry only patches an existing id and is skipped.
+# `- id: lazygit / name: ...` entry only patches an existing id and is skipped.
 - insert:
-    - id: easygit
-      name: dsh-easygit-plugin
+    - id: lazygit
+      name: dsh-lazygit-plugin

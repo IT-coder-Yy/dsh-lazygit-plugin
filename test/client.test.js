@@ -9,7 +9,7 @@ function loadClientPlugin(reactOverrides = {}) {
   global.window = {
     __ModuleLoader__: {
       load(definition) {
-        assert.strictEqual(definition.id, 'dsh-easygit-plugin')
+        assert.strictEqual(definition.id, 'dsh-lazygit-plugin')
         clientPlugin = definition.factory((name) => {
           assert.strictEqual(name, 'react')
           return react
@@ -40,7 +40,7 @@ test('工作台与 Git 助手请求保留部署路径前缀和取消信号', asy
       await rpc({ action: 'state', sessionId: 'main' }, signal)
       assert.strictEqual(await openSideChat('main'), 'child')
       assert.strictEqual(requests[0].signal, signal)
-      assert.deepStrictEqual(requests.map(request => request.url.href), [base + 'easygit', base + 'easygit'])
+      assert.deepStrictEqual(requests.map(request => request.url.href), [base + 'lazygit', base + 'lazygit'])
       assert.deepStrictEqual(requests.map(request => JSON.parse(request.body).action), ['state', 'side-chat'])
       assert.ok(requests.every(request => request.method === 'POST' && request.headers['Content-Type'] === 'application/json'))
     }
@@ -71,8 +71,8 @@ test('Client 注册原生右栏标签、工具栏入口并将分析隔离到侧�
     },
   }
   clientPlugin.apply({ get: (key) => services[key], effect: (callback) => { releases.push(callback()) } })
-  assert.strictEqual(types[0].id, 'dsh-easygit-plugin')
-  assert.strictEqual(types[0].kind, 'easygit')
+  assert.strictEqual(types[0].id, 'dsh-lazygit-plugin')
+  assert.strictEqual(types[0].kind, 'lazygit')
   assert.strictEqual(types[0].title(), 'Git 工作台')
   const body = registrations.find(({ definition }) => definition.name === 'sidebar.right.pane.tab')
   assert.strictEqual(body.definition.key, types[0].id)
@@ -81,16 +81,16 @@ test('Client 注册原生右栏标签、工具栏入口并将分析隔离到侧�
   const action = toolbar.renderer({ sessionId: 'session-a' })
   action.args[1].openWorkbench('session-a')
   action.args[1].openWorkbench('session-b')
-  assert.deepStrictEqual(opened, [['session-a', 'easygit'], ['session-b', 'easygit']])
+  assert.deepStrictEqual(opened, [['session-a', 'lazygit'], ['session-b', 'lazygit']])
   assert.throws(() => action.args[1].openWorkbench(''), /当前会话不可用/)
   const tab = { visible: true, actions: { close: () => { closed += 1 } } }
   const panel = body.renderer({ sessionId: 'session-b', useTabInfo: () => ({ tab }) })
   assert.strictEqual(panel.args[1].sessionId, 'session-b')
   panel.args[1].close()
   assert.strictEqual(closed, 1)
-  assert.deepStrictEqual(body.definition.children, { 'easygit.chat': { kind: 'single', scope: 'session' } })
-  assert.ok(registrations.some(({ definition }) => definition.name === 'easygit.chat'))
-  const chat = registrations.find(({ definition }) => definition.name === 'easygit.chat').renderer
+  assert.deepStrictEqual(body.definition.children, { 'lazygit.chat': { kind: 'single', scope: 'session' } })
+  assert.ok(registrations.some(({ definition }) => definition.name === 'lazygit.chat'))
+  const chat = registrations.find(({ definition }) => definition.name === 'lazygit.chat').renderer
   const renderChat = openState => chat({ useSession: select => select({ openState }), renderFactorySlot: (...args) => args })
   const before = renderChat('loading'), after = renderChat('ready')
   assert.strictEqual(before[2].slots.views, after[2].slots.views, '刷新时必须保留原生聊天组件身份，防止通知、思考及工具详情自动收起')
@@ -309,7 +309,7 @@ test('工作台使用原生容器宽高，不修改宿主列布局或隐藏其�
   }
   try { clientPlugin.__testing.injectStyles() } finally { delete global.document }
   assert.match(styleTag.textContent, /\.gg-workbench \{[^}]*position: relative;[^}]*width: 100%; height: 100%;/)
-  assert.doesNotMatch(styleTag.textContent, /data-easygit-workbench|data-side=|gg-workbench-resize/)
+  assert.doesNotMatch(styleTag.textContent, /data-lazygit-workbench|data-side=|gg-workbench-resize/)
 })
 
 test('本地分支搜索忽略大小写和首尾空格', () => {

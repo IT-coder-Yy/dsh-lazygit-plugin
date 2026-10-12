@@ -22,7 +22,7 @@ await build({
   target: 'es2022',
   external: ['react'],
   banner: {
-    js: 'window.__ModuleLoader__.load({ id: "dsh-easygit-plugin", factory: (require) => { var module = { exports: {} }; var exports = module.exports;',
+    js: 'window.__ModuleLoader__.load({ id: "dsh-lazygit-plugin", factory: (require) => { var module = { exports: {} }; var exports = module.exports;',
   },
   footer: {
     js: 'return module.exports; } });',

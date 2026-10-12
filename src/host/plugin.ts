@@ -1,16 +1,17 @@
 /**
- * dsh-easygit-plugin Host plugin package.
+ * dsh-lazygit-plugin Host plugin package.
  *
  * It is mounted as one profile composition entry and serves every DeepSeek
  * Harness session. It uses only ctx.tools.register for tools and a
- * ctx.webServer POST /easygit route for Client-to-Host actions.
+ * ctx.webServer POST /lazygit route for Client-to-Host actions.
  *
  * The exposed model tools are git_propose, git_repo_state and git_diff. Repository changes
  * are only available through the Client action route.
  */
 
-import { registerEasyGitActions, type WebServerService, type ConnectionService } from './actions'
+import { registerLazyGitActions, type WebServerService, type ConnectionService } from './actions'
 import { SideChatService } from './side-chat'
+import { openStorage } from './storage'
 import { generateCommitMessage } from './commit-message'
 import type { GitFailureContext } from '../shared/contracts'
 import {
@@ -607,7 +608,7 @@ function registerRecoveryProposal(
   }
   proposalService.closeOpen(sessionId)
   storeProposal(sessionId, proposal)
-  console.log('easygit 修正建议登记', proposal.proposalId, 'session=', sessionId, 'risk=', risk.level)
+  console.log('lazygit 修正建议登记', proposal.proposalId, 'session=', sessionId, 'risk=', risk.level)
   return proposal
 }
 
@@ -638,7 +639,7 @@ function registerFailureProposal(sessionId: string, workdir: string, command: st
   }
   proposalService.closeOpen(sessionId)
   storeProposal(sessionId, proposal)
-  console.log('easygit 失败上下文登记', proposal.proposalId, 'session=', sessionId)
+  console.log('lazygit 失败上下文登记', proposal.proposalId, 'session=', sessionId)
   return proposal
 }
 
@@ -670,12 +671,7 @@ function connectProposalStorage(ctx: HostContext): Promise<void> {
   const ready = (async () => {
     const backend = storage.backend.get('json')
     if (!backend || !backend.kv || typeof backend.kv.open !== 'function') throw new Error('JSON storage backend does not support key-value units')
-    unit = await backend.kv.open({
-      name: 'easygit_proposals',
-      version: 1,
-      tables: ['proposals'],
-      hasGlobal: false,
-    })
+    unit = await openStorage(backend.kv, 'proposals', 'proposals')
     await proposalService.attachStorage(unit)
   })()
   if (typeof ctx.effect === 'function') {
@@ -685,7 +681,7 @@ function connectProposalStorage(ctx: HostContext): Promise<void> {
 }
 
 const plugin = {
-  name: 'easygit',
+  name: 'lazygit',
   inject: ['shell', 'tools'],
   apply(ctx: HostContext): void {
     const shell = ctx.get<ShellService | null>('shell')
@@ -924,7 +920,7 @@ const plugin = {
       })
     }
 
-    const registerWebServer = (webServer: WebServerService | null, connection: ConnectionService | null): unknown => registerEasyGitActions(webServer, {
+    const registerWebServer = (webServer: WebServerService | null, connection: ConnectionService | null): unknown => registerLazyGitActions(webServer, {
       repository,
       proposalStorageReady,
       openChat: (sessionId) => chats.open(sessionId),
@@ -990,6 +986,7 @@ const plugin = {
 
 // Pure helpers exported for tests and downstream integrations.
 const helpers = {
+  openStorage,
   SideChatService,
   parseCommand,
   validateCommand,

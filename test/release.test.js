@@ -10,10 +10,10 @@ const { join, resolve } = require('node:path')
 const script = resolve(__dirname, '../scripts/prepare-release.mjs')
 
 function prepare(t, tag, prerelease, versions = {}) {
-  const cwd = mkdtempSync(join(tmpdir(), 'easygit-release-'))
+  const cwd = mkdtempSync(join(tmpdir(), 'lazygit-release-'))
   t.after(() => rmSync(cwd, { recursive: true, force: true }))
   const version = tag.replace(/^v/, '')
-  const pkg = JSON.stringify({ name: 'dsh-easygit-plugin', version: versions.pkg ?? version })
+  const pkg = JSON.stringify({ name: 'dsh-lazygit-plugin', version: versions.pkg ?? version })
   const lock = JSON.stringify({ version: versions.lock ?? version, packages: { '': { version: versions.root ?? version } } })
   const event = join(cwd, 'event.json')
   const output = join(cwd, 'output')

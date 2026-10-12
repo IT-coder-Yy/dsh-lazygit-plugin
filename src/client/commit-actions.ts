@@ -1,5 +1,5 @@
 const React = require('react') as typeof import('react')
-import type { CommitEditAction, CommitEditState, EasyGitAction, EasyGitRequest, EasyGitResponse } from '../shared/contracts'
+import type { CommitEditAction, CommitEditState, LazyGitAction, LazyGitRequest, LazyGitResponse } from '../shared/contracts'
 
 interface Props {
   sessionId: string
@@ -7,7 +7,7 @@ interface Props {
   hash?: string
   parents?: string[]
   disabled?: boolean
-  rpc<A extends EasyGitAction>(request: EasyGitRequest<A>, signal?: AbortSignal): Promise<EasyGitResponse<A>>
+  rpc<A extends LazyGitAction>(request: LazyGitRequest<A>, signal?: AbortSignal): Promise<LazyGitResponse<A>>
   onChanged(): void
   onConflicts(): void
   onBusy?(busy: boolean): void
@@ -68,7 +68,7 @@ export function GitCommitActions(props: Props) {
         action, sessionId: props.sessionId, operationId: 'commit-' + crypto.randomUUID(), token: state.token, confirmRisk: true,
         ...(action === 'amend-message' ? { message } : {}),
         ...(action === 'revert-commit' ? { hash: props.hash, ...(mainline ? { mainline } : {}) } : {}),
-      } as EasyGitRequest<CommitEditAction>)
+      } as LazyGitRequest<CommitEditAction>)
       complete(response.ok)
       props.onChanged()
       if (!mounted.current) return

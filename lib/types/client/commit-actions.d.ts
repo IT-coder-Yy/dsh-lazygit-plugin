@@ -1,11 +1,11 @@
-import type { EasyGitAction, EasyGitRequest, EasyGitResponse } from '../shared/contracts';
+import type { LazyGitAction, LazyGitRequest, LazyGitResponse } from '../shared/contracts';
 interface Props {
     sessionId: string;
     revision: number;
     hash?: string;
     parents?: string[];
     disabled?: boolean;
-    rpc<A extends EasyGitAction>(request: EasyGitRequest<A>, signal?: AbortSignal): Promise<EasyGitResponse<A>>;
+    rpc<A extends LazyGitAction>(request: LazyGitRequest<A>, signal?: AbortSignal): Promise<LazyGitResponse<A>>;
     onChanged(): void;
     onConflicts(): void;
     onBusy?(busy: boolean): void;

@@ -31,7 +31,7 @@ export function SideChat({ sessionId, sessions, SessionProvider, renderSlot, col
     setReference(null)
     openSideChat(sessionId).then(async id => {
       if (cancelled) return
-      retained = sessions.retain(id, { source: 'easygit' })
+      retained = sessions.retain(id, { source: 'lazygit' })
       await retained!.ready
       if (!cancelled) setReference(retained)
     }).catch(reason => { if (!cancelled) setError(String(reason.message || reason)) })
@@ -50,7 +50,7 @@ export function SideChat({ sessionId, sessions, SessionProvider, renderSlot, col
     React.createElement('div', { className: 'gg-chat-head' }, 'Git 助手 · 主会话上下文自动同步'),
     error ? React.createElement('div', { role: 'alert', className: 'gg-workbench-error' }, error,
       React.createElement('button', { className: 'gg-btn', onClick: () => setRetry(retry + 1) }, '重试')) : null,
-    reference ? React.createElement(SessionProvider, { session: reference }, renderSlot('easygit.chat', {}))
+    reference ? React.createElement(SessionProvider, { session: reference }, renderSlot('lazygit.chat', {}))
       : !error ? React.createElement('div', { className: 'gg-idletext' }, '正在恢复 Git 助手…') : null,
   )
 }

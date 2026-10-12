@@ -114,6 +114,27 @@ for (const finish of ['continue', 'abort']) test('无冲突压缩合并暂存结
   } finally { cleanup(f.dir) }
 })
 
+for (const finish of ['continue', 'abort']) test('旧名称的压缩合并可' + finish, async () => {
+  const f = fixture()
+  try {
+    const before = f.git('rev-parse', 'HEAD')
+    assert.equal((await f.merge('squash')).ok, true)
+    const current = path.join(f.dir, f.git('rev-parse', '--git-path', 'lazygit-squash.json'))
+    const legacy = path.join(f.dir, f.git('rev-parse', '--git-path', 'easygit-squash.json'))
+    fs.renameSync(current, legacy)
+    assert.equal((await f.call('get-conflicts')).data.mergeMode, 'squash')
+    assert.equal(fs.existsSync(legacy), true, '只读查询不应迁移或删除文件')
+    assert.equal(fs.existsSync(current), false)
+    const completed = await f.finish(finish)
+    assert.equal(completed.ok, true, JSON.stringify(completed))
+    assert.equal(completed.data.operation, null)
+    assert.equal(fs.existsSync(legacy), false)
+    assert.equal(f.git('status', '--porcelain'), '')
+    if (finish === 'continue') assert.equal(f.git('show', '-s', '--format=%P'), before)
+    else assert.equal(f.git('rev-parse', 'HEAD'), before)
+  } finally { cleanup(f.dir) }
+})
+
 test('拒绝旧预览、脏工作区、当前分支、标签及参数注入；支持远程引用', async () => {
   const f = fixture()
   try {

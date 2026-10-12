@@ -16,7 +16,7 @@ if (process.env.DSH_VERSION) assert.equal(version, process.env.DSH_VERSION)
 const requireDsh = createRequire(anchor)
 const load = name => import(pathToFileURL(requireDsh.resolve(name)).href)
 const project = resolve(dirname(fileURLToPath(import.meta.url)), '..')
-const root = mkdtempSync(join(tmpdir(), 'easygit-dsh-compat-'))
+const root = mkdtempSync(join(tmpdir(), 'lazygit-dsh-compat-'))
 const repo = join(root, 'repo')
 mkdirSync(repo)
 const git = (...args) => execFileSync('git', args, { cwd: repo, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] })
@@ -39,9 +39,9 @@ try {
   prepareProfile('web')
   const modules = join(process.env.DSH_HOME, 'profiles/web/node_modules')
   mkdirSync(modules, { recursive: true })
-  symlinkSync(project, join(modules, 'dsh-easygit-plugin'), 'dir')
+  symlinkSync(project, join(modules, 'dsh-lazygit-plugin'), 'dir')
   const patch = join(root, 'plugin.yml')
-  writeFileSync(patch, '- insert:\n    - id: easygit\n      name: dsh-easygit-plugin\n')
+  writeFileSync(patch, '- insert:\n    - id: lazygit\n      name: dsh-lazygit-plugin\n')
   runtime = await runProfile({
     environment: createLaunchEnvironmentSnapshot([{ source: 'process', values: process.env }]),
     profile: 'web', patchFiles: [patch], args: ['--port', '0', '--no-open'],
@@ -52,9 +52,9 @@ try {
   const login = await fetch(ctx.get('connection').authenticatedUrl(base), { redirect: 'manual' })
   const cookie = login.headers.getSetCookie().map(value => value.split(';')[0]).join('; ')
   assert.ok(cookie, 'DSH 应颁发浏览器认证 cookie')
-  assert.equal((await fetch(base + 'easygit', { method: 'POST' })).status, 401)
+  assert.equal((await fetch(base + 'lazygit', { method: 'POST' })).status, 401)
   const post = async body => {
-    const response = await fetch(base + 'easygit', {
+    const response = await fetch(base + 'lazygit', {
       method: 'POST', headers: { 'Content-Type': 'application/json', cookie },
       body: JSON.stringify(body), signal: AbortSignal.timeout(30_000),
     })
@@ -87,11 +87,11 @@ try {
   const tools = child.agent.ctx.get('tools').schemas(child.agent).map(entry => entry.name)
   assert.ok(tools.includes('git_propose'))
   assert.ok(!tools.includes('bash') && !tools.includes('write'))
-  const entry = ctx.get('clientModules').graph().entries.find(item => item.id === 'dsh-easygit-plugin')
+  const entry = ctx.get('clientModules').graph().entries.find(item => item.id === 'dsh-lazygit-plugin')
   assert.ok(entry, '客户端应进入真实 DSH 模块加载图')
   const bundle = await fetch(new URL(entry.url, base), { headers: { cookie } })
   assert.equal(bundle.status, 200)
-  assert.match(await bundle.text(), /dsh-easygit-plugin/)
+  assert.match(await bundle.text(), /dsh-lazygit-plugin/)
   const directories = ctx.get('workingDirectory')
   if (version === '0.2.1-alpha.2') assert.ok(directories, '新版工作目录服务应正常加载')
   if (directories) {

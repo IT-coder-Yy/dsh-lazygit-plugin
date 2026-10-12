@@ -293,7 +293,7 @@ export interface ProposalExecutionResponse extends ProposalCommandResponse {
     recovery?: RecoveryProposal | null;
     analysis?: AgentAnalysisRequest;
 }
-export interface EasyGitRequestMap {
+export interface LazyGitRequestMap {
     'generate-commit-message': {
         sessionId: string;
     };
@@ -526,7 +526,7 @@ export interface EasyGitRequestMap {
         confirm?: boolean;
     };
 }
-export interface EasyGitResponseMap {
+export interface LazyGitResponseMap {
     'generate-commit-message': ActionResult<{
         message: string;
     }>;
@@ -587,9 +587,9 @@ export interface EasyGitResponseMap {
     verify: ProposalCommandResponse;
     execute: ProposalExecutionResponse;
 }
-export type EasyGitAction = keyof EasyGitRequestMap;
-export type EasyGitRequest<A extends EasyGitAction = EasyGitAction> = {
+export type LazyGitAction = keyof LazyGitRequestMap;
+export type LazyGitRequest<A extends LazyGitAction = LazyGitAction> = {
     action: A;
-} & EasyGitRequestMap[A];
-export type EasyGitResponse<A extends EasyGitAction> = EasyGitResponseMap[A];
+} & LazyGitRequestMap[A];
+export type LazyGitResponse<A extends LazyGitAction> = LazyGitResponseMap[A];
 export {};

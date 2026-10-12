@@ -1,11 +1,11 @@
 const React = require('react') as typeof import('react')
-import type { ActionResult, ConflictDetail, ConflictOperation, ConflictState, ConflictVersion, EasyGitAction, EasyGitRequest, EasyGitResponse } from '../shared/contracts'
+import type { ActionResult, ConflictDetail, ConflictOperation, ConflictState, ConflictVersion, LazyGitAction, LazyGitRequest, LazyGitResponse } from '../shared/contracts'
 import { chooseConflictBlock, conflictLineRanges, parseConflictBlocks } from './conflict-model'
 
 interface Props {
   sessionId: string
   revision: number
-  rpc<A extends EasyGitAction>(request: EasyGitRequest<A>, signal?: AbortSignal): Promise<EasyGitResponse<A>>
+  rpc<A extends LazyGitAction>(request: LazyGitRequest<A>, signal?: AbortSignal): Promise<LazyGitResponse<A>>
   onChanged(): void
   onDirty(dirty: boolean): void
   onCommand(label: string, command: string): (success: boolean) => void
@@ -95,7 +95,7 @@ export function GitConflictsTab(props: Props) {
         : 'git ' + String(payload.kind) + ' ' + (action === 'start-operation' ? String(payload.target) : '--' + String(payload.mode))
     const complete = props.onCommand(action === 'save-conflict' ? '保存冲突结果' : '冲突处理', command)
     try {
-      const response = await props.rpc({ action, sessionId: props.sessionId, operationId: 'conflict-' + crypto.randomUUID(), ...payload } as EasyGitRequest) as ActionResult<ConflictDetail | ConflictState>
+      const response = await props.rpc({ action, sessionId: props.sessionId, operationId: 'conflict-' + crypto.randomUUID(), ...payload } as LazyGitRequest) as ActionResult<ConflictDetail | ConflictState>
       complete(response.ok)
       if (!mounted.current) return
       if (!response.ok) { showFailure(response); await load(); return }

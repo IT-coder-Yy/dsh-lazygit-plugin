@@ -25,7 +25,7 @@ interface RepositoryContext {
     workdir: string;
     policy: unknown;
 }
-interface EasyGitActionDependencies {
+interface LazyGitActionDependencies {
     repository: GitRepositoryService;
     proposalStorageReady: Promise<void>;
     requestAnalysis?(proposal: StoredProposal, persist: () => Promise<void>, retry: boolean): Promise<void>;
@@ -51,5 +51,5 @@ interface EasyGitActionDependencies {
     resolveExecutionPolicy(sessionId: string): Promise<unknown>;
 }
 /** Register the Client-to-Host POST dispatcher with a 1 MiB body limit. */
-export declare function registerEasyGitActions(webServer: WebServerService | null, dependencies: EasyGitActionDependencies, connection: ConnectionService | null): unknown;
+export declare function registerLazyGitActions(webServer: WebServerService | null, dependencies: LazyGitActionDependencies, connection: ConnectionService | null): unknown;
 export {};

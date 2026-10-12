@@ -1,5 +1,5 @@
 import type { IncomingMessage, ServerResponse } from 'node:http'
-import type { EasyGitAction, ProposalView } from '../shared/contracts'
+import type { LazyGitAction, ProposalView } from '../shared/contracts'
 import { deriveChecks, quoteShellArg, redactAndLimit } from './command-policy'
 import type { GitRepositoryService, ShellService } from './git-repository-service'
 import type { StoredProposal } from './proposal-service'
@@ -31,7 +31,7 @@ interface RepositoryContext {
   policy: unknown
 }
 
-interface EasyGitActionDependencies {
+interface LazyGitActionDependencies {
   repository: GitRepositoryService
   proposalStorageReady: Promise<void>
   requestAnalysis?(proposal: StoredProposal, persist: () => Promise<void>, retry: boolean): Promise<void>
@@ -108,7 +108,7 @@ const REPOSITORY_ACTIONS = [
   'rebase',
   'rebase-continue',
   'rebase-abort',
-] as const satisfies readonly EasyGitAction[]
+] as const satisfies readonly LazyGitAction[]
 
 function isRepositoryAction(action: string): action is typeof REPOSITORY_ACTIONS[number] {
   return (REPOSITORY_ACTIONS as readonly string[]).includes(action)
@@ -150,7 +150,7 @@ async function attachRepositoryRecovery(
   body: UnknownRecord,
   result: unknown,
   context: RepositoryContext | null,
-  dependencies: EasyGitActionDependencies,
+  dependencies: LazyGitActionDependencies,
 ): Promise<unknown> {
   const failure = asRecord(result)
   const syncAction = action === 'fetch' || action === 'pull' || action === 'push'
@@ -176,7 +176,7 @@ async function attachRepositoryRecovery(
     )
     return handled ? { ...failure, ...handled } : result
   } catch (error) {
-    console.log('easygit 修正提议生成失败', errorMessage(error))
+    console.log('lazygit 修正提议生成失败', errorMessage(error))
     return result
   }
 }
@@ -224,7 +224,7 @@ async function dispatchRepositoryAction(
   sessionId: string,
   body: UnknownRecord,
   context: RepositoryContext | null,
-  dependencies: EasyGitActionDependencies,
+  dependencies: LazyGitActionDependencies,
 ): Promise<unknown> {
   if (!context) return { ok: false, code: 'SESSION_NOT_FOUND', message: '无法确定当前会话的仓库目录' }
   if (action === 'generate-commit-message') {
@@ -275,7 +275,7 @@ async function dispatchProposalAction(
   action: string,
   sessionId: string,
   body: UnknownRecord,
-  dependencies: EasyGitActionDependencies,
+  dependencies: LazyGitActionDependencies,
 ): Promise<{ status: number; data: unknown }> {
   if (action === 'request-analysis') {
     const proposal = dependencies.findProposal(sessionId, body.proposalId)
@@ -367,7 +367,7 @@ async function dispatchProposalAction(
       await dependencies.resolveExecutionPolicy(sessionId),
       () => dependencies.flushProposal(sessionId),
     )
-    console.log('easygit HTTP execute', proposal.proposalId, 'ok=', result.ok)
+    console.log('lazygit HTTP execute', proposal.proposalId, 'ok=', result.ok)
     return { status: 200, data: result }
   }
 
@@ -375,11 +375,11 @@ async function dispatchProposalAction(
 }
 
 /** Register the Client-to-Host POST dispatcher with a 1 MiB body limit. */
-export function registerEasyGitActions(webServer: WebServerService | null, dependencies: EasyGitActionDependencies, connection: ConnectionService | null): unknown {
+export function registerLazyGitActions(webServer: WebServerService | null, dependencies: LazyGitActionDependencies, connection: ConnectionService | null): unknown {
   if (!webServer) return undefined
   return webServer.register({
     kind: 'prefix',
-    path: '/easygit',
+    path: '/lazygit',
     handler: async (req, res) => {
       if (!connection) { sendJson(res, 503, { ok: false, error: 'connection service unavailable' }); return }
       const rejection = connection.requestRejection(req)
