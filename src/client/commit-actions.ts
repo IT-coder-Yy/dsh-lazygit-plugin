@@ -1,3 +1,4 @@
+import { t, messageText } from './i18n'
 const React = require('react') as typeof import('react')
 import type { CommitEditAction, CommitEditState, LazyGitAction, LazyGitRequest, LazyGitResponse } from '../shared/contracts'
 
@@ -93,37 +94,37 @@ export function GitCommitActions(props: Props) {
   const button = (caption: string, onClick: () => void, blocked = false, title?: string) => h('button', {
     type: 'button', className: 'gg-btn', disabled: disabled || blocked, onClick, title,
   }, caption)
-  return h('section', { className: 'gg-commit-form', 'aria-label': '提交撤销与修正' },
-    h('strong', null, '提交撤销与修正'),
-    feedback ? h('pre', { className: feedback.error ? 'gg-workbench-error' : 'gg-idletext', role: 'status', style: { whiteSpace: 'pre-wrap' } }, feedback.message) : null,
-    state ? h('p', { className: 'gg-idletext' }, (state.branch || '分离 HEAD') + ' · HEAD ' + state.head.slice(0, 12)) : h('p', null, '正在读取提交状态。可点击刷新重试。'),
-    state?.blocked ? h('p', null, '请先完成当前 Git 操作并解决冲突。') : null,
-    state && !state.branch ? h('p', null, '请先切换到本地分支。') : null,
+  return h('section', { className: 'gg-commit-form', 'aria-label': t('提交撤销与修正') },
+    h('strong', null, t('提交撤销与修正')),
+    feedback ? h('pre', { className: feedback.error ? 'gg-workbench-error' : 'gg-idletext', role: 'status', style: { whiteSpace: 'pre-wrap' } }, messageText(feedback.message)) : null,
+    state ? h('p', { className: 'gg-idletext' }, (state.branch || t('分离 HEAD')) + ' · HEAD ' + state.head.slice(0, 12)) : h('p', null, t('正在读取提交状态。可点击刷新重试。')),
+    state?.blocked ? h('p', null, t('请先完成当前 Git 操作并解决冲突。')) : null,
+    state && !state.branch ? h('p', null, t('请先切换到本地分支。')) : null,
     h('div', { className: 'gg-actions' },
-      latest ? button(labels['amend-message'], () => choose('amend-message'), unavailable) : null,
-      latest ? button(labels['amend-commit'], () => choose('amend-commit'), unavailable || !state?.staged, '仅补充已暂存改动，保留原提交说明') : null,
-      latest ? button(labels['undo-commit'], () => choose('undo-commit'), unavailable || !state?.parents.length, '撤销到第一父提交，改动保留在暂存区；根提交不支持') : null,
-      props.hash ? button(labels['revert-commit'], () => choose('revert-commit'), unavailable || !!state?.dirty, '生成反向提交；需要工作区和暂存区干净') : null,
-      button('刷新操作状态', () => { setFeedback(null); void load() }),
+      latest ? button(t(labels['amend-message']), () => choose('amend-message'), unavailable) : null,
+      latest ? button(t(labels['amend-commit']), () => choose('amend-commit'), unavailable || !state?.staged, t('仅补充已暂存改动，保留原提交说明')) : null,
+      latest ? button(t(labels['undo-commit']), () => choose('undo-commit'), unavailable || !state?.parents.length, t('撤销到第一父提交，改动保留在暂存区；根提交不支持')) : null,
+      props.hash ? button(t(labels['revert-commit']), () => choose('revert-commit'), unavailable || !!state?.dirty, t('生成反向提交；需要工作区和暂存区干净')) : null,
+      button(t('刷新操作状态'), () => { setFeedback(null); void load() }),
     ),
-    props.hash && state?.dirty ? h('p', { className: 'gg-idletext' }, 'Revert 前请先提交或贮藏当前改动。') : null,
+    props.hash && state?.dirty ? h('p', { className: 'gg-idletext' }, t('Revert 前请先提交或贮藏当前改动。')) : null,
     action ? h('div', null,
-      h('strong', null, labels[action]),
-      h('p', null, action === 'amend-message' ? '仅替换最近提交说明，已暂存和未暂存内容保持不变。'
-        : action === 'amend-commit' ? '将全部已暂存改动补充到最近提交，保留原说明；未暂存改动不纳入。'
-          : action === 'undo-commit' ? '当前分支退回第一父提交，撤销的改动保留在暂存区，工作区文件保持不变。'
-            : '新增一个提交来抵消所选提交的改动，已有提交历史保留。'),
-      action === 'amend-message' ? h('textarea', { className: 'gg-input', 'aria-label': '新的提交说明', rows: 5, maxLength: 49152, value: message, disabled, onChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => setMessage(e.currentTarget.value) }) : null,
-      mergeRevert ? h('label', { className: 'gg-field' }, '主线父提交（保留哪条主线；撤销相对该父提交的改动）',
-        h('select', { className: 'gg-input', 'aria-label': '主线父提交', value: mainline, disabled, onChange: (e: React.ChangeEvent<HTMLSelectElement>) => { setMainline(Number(e.currentTarget.value)); setConfirmed(false) } },
-          h('option', { value: 0 }, '请选择主线父提交'),
-          props.parents?.map((parent, index) => h('option', { key: parent, value: index + 1 }, '父提交 ' + (index + 1) + ' · ' + parent.slice(0, 12))),
+      h('strong', null, t(labels[action])),
+      h('p', null, action === 'amend-message' ? t('仅替换最近提交说明，已暂存和未暂存内容保持不变。')
+        : action === 'amend-commit' ? t('将全部已暂存改动补充到最近提交，保留原说明；未暂存改动不纳入。')
+          : action === 'undo-commit' ? t('当前分支退回第一父提交，撤销的改动保留在暂存区，工作区文件保持不变。')
+            : t('新增一个提交来抵消所选提交的改动，已有提交历史保留。')),
+      action === 'amend-message' ? h('textarea', { className: 'gg-input', 'aria-label': t('新的提交说明'), rows: 5, maxLength: 49152, value: message, disabled, onChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => setMessage(e.currentTarget.value) }) : null,
+      mergeRevert ? h('label', { className: 'gg-field' }, t('主线父提交（保留哪条主线；撤销相对该父提交的改动）'),
+        h('select', { className: 'gg-input', 'aria-label': t('主线父提交'), value: mainline, disabled, onChange: (e: React.ChangeEvent<HTMLSelectElement>) => { setMainline(Number(e.currentTarget.value)); setConfirmed(false) } },
+          h('option', { value: 0 }, t('请选择主线父提交')),
+          props.parents?.map((parent, index) => h('option', { key: parent, value: index + 1 }, t('父提交 ') + (index + 1) + ' · ' + parent.slice(0, 12))),
         )) : null,
       h('label', { className: 'gg-check' }, h('input', { type: 'checkbox', checked: confirmed, disabled, onChange: e => setConfirmed(e.currentTarget.checked) }),
-        action === 'revert-commit' ? '我确认撤销此提交的改动，并了解可能产生冲突' : '我了解这会改写本地历史；若提交已推送，会影响与远程的同步'),
+        action === 'revert-commit' ? t('我确认撤销此提交的改动，并了解可能产生冲突') : t('我了解这会改写本地历史；若提交已推送，会影响与远程的同步')),
       h('div', { className: 'gg-actions' },
-        button(busy ? '正在执行…' : '确认' + labels[action], () => { void execute() }, unavailable || !confirmed || (action === 'amend-message' && !message.trim()) || (mergeRevert && !mainline)),
-        button('取消', () => { setAction(null); setConfirmed(false) }),
+        button(busy ? t('正在执行…') : t('确认') + t(labels[action]), () => { void execute() }, unavailable || !confirmed || (action === 'amend-message' && !message.trim()) || (mergeRevert && !mainline)),
+        button(t('取消'), () => { setAction(null); setConfirmed(false) }),
       ),
     ) : null,
   )

@@ -1,3 +1,4 @@
+import { t, useLanguage } from './i18n'
 import type { AnyRecord } from './view-model'
 import { EmbeddedChat, SideChat } from './side-chat'
 const React = require('react')
@@ -6,6 +7,7 @@ export type Dispose = () => void
 
 const WORKBENCH_ID = 'dsh-lazygit-plugin'
 const WORKBENCH_KIND = 'lazygit'
+function WorkbenchTitle() { useLanguage(); return t('Git 工作台') }
 
 /** Register a native tab without taking over the host's layout or other tabs. */
 export function registerWorkbench(ctx: AnyRecord, renderPanel: (props: {
@@ -20,9 +22,12 @@ export function registerWorkbench(ctx: AnyRecord, renderPanel: (props: {
   ctx.effect(() => tabs.register({
     id: WORKBENCH_ID,
     kind: WORKBENCH_KIND,
-    title: () => 'Git 工作台',
-    guide: [{ id: WORKBENCH_KIND, order: 30, title: () => 'Git 工作台', description: () => '查看仓库、提交记录和 Git 操作建议' }],
+    title: () => t('Git 工作台'),
+    guide: [{ id: WORKBENCH_KIND, order: 30, title: () => t('Git 工作台'), description: () => t('查看仓库、提交记录和 Git 操作建议') }],
   }), 'lazygit: tab type')
+  slots.inject('sidebar.right.pane.tab.title', () => slots.register(
+    { name: 'sidebar.right.pane.tab.title', key: WORKBENCH_ID }, WorkbenchTitle,
+  ))
   slots.inject('sidebar.right.pane.tab', () => slots.register(
     { name: 'sidebar.right.pane.tab', key: WORKBENCH_ID, children: { 'lazygit.chat': { kind: 'single', scope: 'session' } } },
     (props: AnyRecord) => {

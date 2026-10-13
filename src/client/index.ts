@@ -1,3 +1,4 @@
+import { t, messageText, useLanguage, setLanguage, getLanguage } from './i18n'
 import { GitConflictsTab } from './conflict-tab'
 import { GitStashesTab } from './stash-tab'
 import { GitMergeTab } from './merge-tab'
@@ -405,6 +406,12 @@ interface SyncTabProps extends RepositoryTabProps {}
           background: var(--gg-bg);
         }
         .gg-workbench-title { color: var(--gg-text); font-size: 16px; line-height: 22px; font-weight: 650; letter-spacing: -.015em; }
+        .gg-workbench-head-actions { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+        .gg-language { display: inline-flex; height: 24px; border: 1px solid var(--gg-border); border-radius: 4px; overflow: hidden; }
+        .gg-language button { min-width: 30px; padding: 0 5px; border: 0; background: transparent; color: var(--gg-text-muted); font: inherit; font-size: 11px; cursor: pointer; }
+        .gg-language button[aria-pressed="true"] { background: var(--gg-surface-raised); color: var(--gg-text); font-weight: 650; }
+        .gg-language button:hover { color: var(--gg-text); }
+        .gg-language button:focus-visible { outline: 2px solid var(--gg-text-muted); outline-offset: -2px; }
         .gg-workbench-close {
           width: 32px;
           height: 32px;
@@ -713,6 +720,7 @@ interface SyncTabProps extends RepositoryTabProps {}
     }
 
     function GitWorkbenchAction(props: GitWorkbenchActionProps) {
+      useLanguage()
       const sessionId = String(props.sessionId || '')
       const intervalFn = props.intervalFn || null
       const [error, setError] = React.useState('')
@@ -754,15 +762,15 @@ interface SyncTabProps extends RepositoryTabProps {}
       return React.createElement('button', {
         type: 'button',
         className: 'gg-btn gg-workbench-action',
-        title: error || (pending ? '打开 Git 工作台，有待确认的操作建议' : '打开 Git 工作台'),
-        'aria-label': error || (pending ? 'Git 工作台，有待确认的操作建议' : 'Git 工作台'),
+        title: messageText(error) || (pending ? t('打开 Git 工作台，有待确认的操作建议') : t('打开 Git 工作台')),
+        'aria-label': messageText(error) || (pending ? t('Git 工作台，有待确认的操作建议') : t('Git 工作台')),
         disabled: !sessionId,
         onClick: openWorkbench,
       },
       renderGitIcon(),
       React.createElement('span', null, 'Git'),
       pending ? React.createElement('span', { className: 'gg-workbench-action-badge', 'aria-hidden': true },
-        React.createElement('span', { className: 'gg-workbench-action-dot' }), '待确认',
+        React.createElement('span', { className: 'gg-workbench-action-dot' }), t('待确认'),
       ) : null,
       )
     }
@@ -776,47 +784,48 @@ interface SyncTabProps extends RepositoryTabProps {}
     }
 
     function failureError(failure: GitFailureContext): string {
-      const message = String(failure.message || '').trim()
+      const rawMessage = String(failure.message || '').trim()
+      const message = messageText(rawMessage)
       const stderr = String(failure.stderr || '').trim()
-      if (!stderr || stderr === message) return message || '（无错误输出）'
+      if (!stderr || stderr === rawMessage) return message || t('（无错误输出）')
       return message ? message + '\n' + stderr : stderr
     }
 
     function renderFailureDetails(failure: GitFailureContext, recoveryReason = '') {
       const details = [
-        '错误码：' + String(failure.code || 'GIT_FAILED'),
-        '退出码：' + (failure.exitCode === null ? '未提供' : String(failure.exitCode)),
-        failure.timedOut ? '命令已超时' : '',
-        failure.mayHavePartialChanges ? '命令可能已部分修改仓库' : '',
+        t('错误码：') + String(failure.code || 'GIT_FAILED'),
+        t('退出码：') + (failure.exitCode === null ? t('未提供') : String(failure.exitCode)),
+        failure.timedOut ? t('命令已超时') : '',
+        failure.mayHavePartialChanges ? t('命令可能已部分修改仓库') : '',
         failure.stdout ? '\n[stdout]\n' + failure.stdout : '',
         failure.stderr ? '\n[stderr]\n' + failure.stderr : '',
-        failure.diagnostics ? '\n[失败后仓库诊断]\n' + failure.diagnostics : '',
+        failure.diagnostics ? t('\n[失败后仓库诊断]\n') + failure.diagnostics : '',
       ].filter(Boolean).join('\n')
       return React.createElement('div', { className: 'gg-failure-card' },
         React.createElement('div', { className: 'gg-failure-row' },
-          React.createElement('strong', { className: 'gg-failure-label' }, '原命令'),
+          React.createElement('strong', { className: 'gg-failure-label' }, t('原命令')),
           React.createElement('code', { className: 'gg-stepcode gg-failure-value' }, String(failure.command || '')),
         ),
         React.createElement('div', { className: 'gg-failure-row' },
-          React.createElement('strong', { className: 'gg-failure-label' }, '错误'),
+          React.createElement('strong', { className: 'gg-failure-label' }, t('错误')),
           React.createElement('pre', { className: 'gg-failure-value' }, failureError(failure)),
         ),
         recoveryReason ? React.createElement('div', { className: 'gg-failure-row' },
-          React.createElement('strong', { className: 'gg-failure-label' }, '修正原因'),
-          React.createElement('div', { className: 'gg-failure-value' }, recoveryReason),
+          React.createElement('strong', { className: 'gg-failure-label' }, t('修正原因')),
+          React.createElement('div', { className: 'gg-failure-value' }, messageText(recoveryReason)),
         ) : null,
         React.createElement('details', null,
-          React.createElement('summary', { className: 'gg-failure-label' }, '完整错误与仓库诊断'),
+          React.createElement('summary', { className: 'gg-failure-label' }, t('完整错误与仓库诊断')),
           React.createElement('pre', { className: 'gg-pre' }, details),
         ),
       )
     }
 
     function refreshButtonLabel(state: RefreshState): string {
-      if (state === 'loading') return '正在刷新…'
-      if (state === 'succeeded') return '已刷新'
-      if (state === 'failed') return '刷新失败'
-      return '刷新'
+      if (state === 'loading') return t('正在刷新…')
+      if (state === 'succeeded') return t('已刷新')
+      if (state === 'failed') return t('刷新失败')
+      return t('刷新')
     }
 
     function useManualRefreshFeedback() {
@@ -853,10 +862,10 @@ interface SyncTabProps extends RepositoryTabProps {}
 
     function renderReview(diff: string) {
       const blocks = parseReviewBlocks(diff)
-      if (!blocks.length) return React.createElement('div', { className: 'gg-idletext' }, diff ? '没有可审阅的代码行。' : '没有可显示的差异。')
+      if (!blocks.length) return React.createElement('div', { className: 'gg-idletext' }, diff ? t('没有可审阅的代码行。') : t('没有可显示的差异。'))
       const renderRow = (row: ReviewRow, index: number) => {
-        if (row.kind === 'skipped') return React.createElement('div', { className: 'gg-review-skip', key: 'review-' + index }, '⌄ ' + row.text)
-        if (row.kind === 'annotation') return React.createElement('div', { className: 'gg-review-annotation', key: 'review-' + index }, row.text)
+        if (row.kind === 'skipped') return React.createElement('div', { className: 'gg-review-skip', key: 'review-' + index }, '⌄ ' + messageText(row.text))
+        if (row.kind === 'annotation') return React.createElement('div', { className: 'gg-review-annotation', key: 'review-' + index }, messageText(row.text))
         return React.createElement('div', { className: 'gg-review-line ' + row.kind, key: 'review-' + index },
           React.createElement('span', { className: 'gg-review-number' }, row.oldNumber === null ? '' : String(row.oldNumber)),
           React.createElement('span', { className: 'gg-review-number' }, row.newNumber === null ? '' : String(row.newNumber)),
@@ -864,7 +873,7 @@ interface SyncTabProps extends RepositoryTabProps {}
         )
       }
       return blocks.map((block, index) => block.kind === 'hunk'
-        ? React.createElement('div', { className: 'gg-review-hunk', key: 'hunk-' + index, tabIndex: 0, role: 'region', 'aria-label': '代码改动块' },
+        ? React.createElement('div', { className: 'gg-review-hunk', key: 'hunk-' + index, tabIndex: 0, role: 'region', 'aria-label': t('代码改动块') },
           React.createElement('div', { className: 'gg-review-content' }, block.rows.map(renderRow)),
         )
         : renderRow(block, index))
@@ -879,11 +888,11 @@ interface SyncTabProps extends RepositoryTabProps {}
     }
 
     function renderRepositoryIdentity(topLevel: unknown, branch: unknown) {
-      const name = repositoryName(topLevel)
-      const currentBranch = String(branch || '分离 HEAD')
+      const name = topLevel ? repositoryName(topLevel) : t('Git 仓库')
+      const currentBranch = String(branch || t('分离 HEAD'))
       return React.createElement('div', {
         className: 'gg-repository-identity',
-        'aria-label': name + '，当前分支 ' + currentBranch,
+        'aria-label': name + t('，当前分支 ') + currentBranch,
       },
       React.createElement('span', { className: 'gg-repository-name', title: name }, name),
       React.createElement('span', { className: 'gg-repository-arrow', 'aria-hidden': 'true' }, '→'),
@@ -907,6 +916,7 @@ interface SyncTabProps extends RepositoryTabProps {}
       const [summary, setSummary] = React.useState(null as RepositorySummary | null)
       const [selected, setSelected] = React.useState(null as { path: string; staged: boolean } | null)
       const [diff, setDiff] = React.useState('')
+      const [diffIsMessage, setDiffIsMessage] = React.useState(false)
       const [mutating, setBusy] = React.useState(false)
       const [generating, setGenerating] = React.useState(false)
       const [generationError, setGenerationError] = React.useState('')
@@ -955,21 +965,24 @@ interface SyncTabProps extends RepositoryTabProps {}
       }, [sessionId])
 
       const loadDiff = (selection: { path: string; staged: boolean }, showLoading = true): Promise<boolean> => {
-        if (showLoading) setDiff('正在加载差异…')
+        if (showLoading) { setDiff('正在加载差异…'); setDiffIsMessage(true) }
         const request = beginTrackedRequest(diffRequestRef)
         return rpc({ action: 'get-diff', sessionId, path: selection.path, staged: selection.staged }, request.signal)
           .then((response) => {
             if (!isTrackedRequestCurrent(diffRequestRef, request)) return false
             if (response && response.ok === true) {
-              setDiff(String(response.data.diff || '没有可显示的差异。'))
+              setDiff(String(response.data.diff || ''))
+              setDiffIsMessage(false)
               return true
             }
             setDiff(actionError(response))
+            setDiffIsMessage(true)
             return false
           })
           .catch((error) => {
             if (!isTrackedRequestCurrent(diffRequestRef, request) || isAbortError(error)) return false
             setDiff(errorText(error))
+            setDiffIsMessage(true)
             return false
           })
       }
@@ -1105,7 +1118,7 @@ interface SyncTabProps extends RepositoryTabProps {}
         React.createElement('button', {
           className: 'gg-btn', disabled: busy,
           onClick: () => isConflict(file) ? props.onConflicts() : runMutation(staged ? 'unstage-paths' : 'stage-paths', { paths: [String(file.path || '')] }),
-        }, isConflict(file) ? '解决冲突' : staged ? '取消暂存' : '暂存'),
+        }, isConflict(file) ? t('解决冲突') : staged ? t('取消暂存') : t('暂存')),
         )
       }
 
@@ -1138,34 +1151,34 @@ interface SyncTabProps extends RepositoryTabProps {}
         React.createElement('div', { className: 'gg-tab-toolbar' },
           summary
             ? renderRepositoryIdentity(summary.topLevel, summary.branch || summary.head)
-            : React.createElement('span', { className: 'gg-section-heading' }, '正在读取仓库…'),
+            : React.createElement('span', { className: 'gg-section-heading' }, t('正在读取仓库…')),
           React.createElement('button', {
             className: 'gg-btn', disabled: busy || refreshFeedback.state === 'loading',
             onClick: () => { void load(true) },
           }, refreshButtonLabel(refreshFeedback.state)),
-          React.createElement('button', { className: 'gg-btn', type: 'button', onClick: props.onConflicts }, '解决冲突 / Merge / Cherry-pick'),
-          React.createElement('button', { className: 'gg-btn', disabled: busy || !summary || hasConflicts, title: hasConflicts ? '请先解决并标记冲突文件' : undefined, onClick: () => runMutation('stage-all') }, '全部暂存'),
-          React.createElement('button', { className: 'gg-btn', disabled: busy || !summary, onClick: () => runMutation('unstage-all') }, '全部取消暂存'),
+          React.createElement('button', { className: 'gg-btn', type: 'button', onClick: props.onConflicts }, t('解决冲突 / Merge / Cherry-pick')),
+          React.createElement('button', { className: 'gg-btn', disabled: busy || !summary || hasConflicts, title: hasConflicts ? t('请先解决并标记冲突文件') : undefined, onClick: () => runMutation('stage-all') }, t('全部暂存')),
+          React.createElement('button', { className: 'gg-btn', disabled: busy || !summary, onClick: () => runMutation('unstage-all') }, t('全部取消暂存')),
         ),
-        message ? React.createElement('div', { className: 'gg-workbench-error' }, message) : null,
+        message ? React.createElement('div', { className: 'gg-workbench-error' }, messageText(message)) : null,
         diagnostics ? React.createElement('pre', { className: 'gg-diagnostics' }, diagnostics) : null,
-        mutationError ? React.createElement('div', { className: 'gg-workbench-error', role: 'alert' }, mutationError.message) : null,
+        mutationError ? React.createElement('div', { className: 'gg-workbench-error', role: 'alert' }, messageText(mutationError.message)) : null,
         mutationError?.diagnostics ? React.createElement('pre', { className: 'gg-diagnostics' }, mutationError.diagnostics) : null,
         summary ? React.createElement('div', { className: 'gg-change-layout' },
           React.createElement('div', { className: 'gg-change-files' },
             React.createElement('div', { className: 'gg-file-group' },
-              React.createElement('strong', null, '未暂存', React.createElement('span', { className: 'gg-section-count' }, String(unstagedFiles.length))),
-              unstagedFiles.length ? renderFileTree(unstagedFiles, false, 'unstaged') : React.createElement('div', { className: 'gg-idletext' }, '没有未暂存的变更。'),
+              React.createElement('strong', null, t('未暂存'), React.createElement('span', { className: 'gg-section-count' }, String(unstagedFiles.length))),
+              unstagedFiles.length ? renderFileTree(unstagedFiles, false, 'unstaged') : React.createElement('div', { className: 'gg-idletext' }, t('没有未暂存的变更。')),
             ),
             React.createElement('div', { className: 'gg-file-group' },
-              React.createElement('strong', null, '已暂存', React.createElement('span', { className: 'gg-section-count' }, String(stagedFiles.length))),
-              stagedFiles.length ? renderFileTree(stagedFiles, true, 'staged') : React.createElement('div', { className: 'gg-idletext' }, '没有已暂存的变更。'),
+              React.createElement('strong', null, t('已暂存'), React.createElement('span', { className: 'gg-section-count' }, String(stagedFiles.length))),
+              stagedFiles.length ? renderFileTree(stagedFiles, true, 'staged') : React.createElement('div', { className: 'gg-idletext' }, t('没有已暂存的变更。')),
             ),
             React.createElement('div', { className: 'gg-commit-form' },
               React.createElement('label', { className: 'gg-field', htmlFor: 'gg-commit-message' },
-                React.createElement('span', { className: 'gg-field-label' }, '提交说明'),
+                React.createElement('span', { className: 'gg-field-label' }, t('提交说明')),
                 React.createElement('textarea', {
-                  id: 'gg-commit-message', className: 'gg-input', value: commitMessage, placeholder: '例如：fix: 修复登录状态', disabled: busy,
+                  id: 'gg-commit-message', className: 'gg-input', value: commitMessage, placeholder: t('例如：fix: 修复登录状态'), disabled: busy,
                   rows: 3,
                   onChange: (event: AnyRecord) => { setCommitMessage(String(event.target.value || '')); setCommitState('idle') },
                 }),
@@ -1175,7 +1188,7 @@ interface SyncTabProps extends RepositoryTabProps {}
                   className: 'gg-btn', type: 'button', disabled: busy || hasConflicts || stagedFiles.length === 0,
                   'aria-busy': generating,
                   onClick: generateMessage,
-                }, generating ? '生成中…' : 'AI 生成'),
+                }, generating ? t('生成中…') : t('AI 生成')),
                 React.createElement('button', {
                   className: 'gg-btn primary', type: 'button', disabled: busy || hasConflicts || !commitMessage.trim() || stagedFiles.length === 0,
                   'aria-busy': commitState === 'loading', 'aria-live': 'polite', 'data-state': commitState,
@@ -1186,25 +1199,27 @@ interface SyncTabProps extends RepositoryTabProps {}
                       if (succeeded) setCommitMessage('')
                     })
                   },
-                }, commitState === 'loading' ? '提交中…' : commitState === 'succeeded' ? '已提交' : commitState === 'failed' ? '重新提交' : '提交'),
+                }, commitState === 'loading' ? t('提交中…') : commitState === 'succeeded' ? t('已提交') : commitState === 'failed' ? t('重新提交') : t('提交')),
               ),
-              generationError ? React.createElement('div', { className: 'gg-workbench-error', role: 'alert' }, generationError) : null,
+              generationError ? React.createElement('div', { className: 'gg-workbench-error', role: 'alert' }, messageText(generationError)) : null,
             ),
             React.createElement(GitCommitActions, { key: sessionId, sessionId, revision, rpc, disabled: busy, onBusy: setBusy, onChanged, onCommand, onConflicts: props.onConflicts }),
           ),
           React.createElement('div', { className: 'gg-diff' },
-            React.createElement('div', { className: 'gg-intent' }, selected ? String(selected.path) + (selected.staged ? '（已暂存）' : '（未暂存）') : '选择文件以查看差异'),
+            React.createElement('div', { className: 'gg-intent' }, selected ? String(selected.path) + (selected.staged ? t('（已暂存）') : t('（未暂存）')) : t('选择文件以查看差异')),
             selected ? React.createElement('div', { className: 'gg-review-toolbar' },
-              React.createElement('button', { className: 'gg-btn gg-review-mode' + (reviewMode === 'review' ? ' active' : ''), type: 'button', onClick: () => setReviewMode('review') }, '文件审阅'),
-              React.createElement('button', { className: 'gg-btn gg-review-mode' + (reviewMode === 'raw' ? ' active' : ''), type: 'button', onClick: () => setReviewMode('raw') }, '原始 Diff'),
+              React.createElement('button', { className: 'gg-btn gg-review-mode' + (reviewMode === 'review' ? ' active' : ''), type: 'button', onClick: () => setReviewMode('review') }, t('文件审阅')),
+              React.createElement('button', { className: 'gg-btn gg-review-mode' + (reviewMode === 'raw' ? ' active' : ''), type: 'button', onClick: () => setReviewMode('raw') }, t('原始 Diff')),
             ) : null,
-            selected && reviewMode === 'review'
+            selected && diffIsMessage
+              ? React.createElement('div', { className: 'gg-idletext' }, messageText(diff))
+              : selected && reviewMode === 'review'
               ? React.createElement('div', { className: 'gg-review' }, renderReviewSurface(diff))
               : React.createElement('pre', { className: 'gg-pre gg-diff-code' },
-                renderRawDiffSurface(selected ? diff : '尚未选择文件。'),
+                renderRawDiffSurface(selected ? diff : t('尚未选择文件。')),
               ),
           ),
-        ) : renderLoadingState('正在读取仓库状态'),
+        ) : renderLoadingState(t('正在读取仓库状态')),
       )
     }
 
@@ -1338,27 +1353,27 @@ interface SyncTabProps extends RepositoryTabProps {}
 
       return React.createElement('section', { className: 'gg-tab-content' },
         React.createElement('div', { className: 'gg-tab-toolbar' },
-          React.createElement('span', { className: 'gg-section-heading' }, '分支与引用'),
+          React.createElement('span', { className: 'gg-section-heading' }, t('分支与引用')),
           React.createElement('button', {
             className: 'gg-btn', disabled: busy || refreshFeedback.state === 'loading',
             onClick: () => { void load(true) },
           }, refreshButtonLabel(refreshFeedback.state)),
         ),
-        message ? React.createElement('div', { className: 'gg-workbench-error' }, message) : null,
+        message ? React.createElement('div', { className: 'gg-workbench-error' }, messageText(message)) : null,
         diagnostics ? React.createElement('pre', { className: 'gg-diagnostics' }, diagnostics) : null,
-        React.createElement('div', { className: 'gg-reference-tabs', role: 'tablist', 'aria-label': 'Git 引用类型' }, [
-          { id: 'local', label: '本地 (' + branches.length + ')' },
-          { id: 'remote', label: '远程 (' + remotes.length + ')' },
-          { id: 'tag', label: '标签 (' + tags.length + ')' },
+        React.createElement('div', { className: 'gg-reference-tabs', role: 'tablist', 'aria-label': t('Git 引用类型') }, [
+          { id: 'local', label: t('本地 (') + branches.length + ')' },
+          { id: 'remote', label: t('远程 (') + remotes.length + ')' },
+          { id: 'tag', label: t('标签 (') + tags.length + ')' },
         ].map((entry) => React.createElement('button', {
           className: 'gg-tab' + (referenceTab === entry.id ? ' active' : ''), type: 'button', role: 'tab', key: entry.id,
           'aria-selected': referenceTab === entry.id, onClick: () => setReferenceTab(entry.id),
         }, entry.label))),
         referenceTab === 'local' ? React.createElement('div', { className: 'gg-local-branches' },
           React.createElement('label', { className: 'gg-field', htmlFor: 'gg-branch-search' },
-            React.createElement('span', { className: 'gg-field-label' }, '搜索分支'),
+            React.createElement('span', { className: 'gg-field-label' }, t('搜索分支')),
             React.createElement('input', {
-              id: 'gg-branch-search', className: 'gg-input', type: 'search', value: branchQuery, placeholder: '输入分支名称',
+              id: 'gg-branch-search', className: 'gg-input', type: 'search', value: branchQuery, placeholder: t('输入分支名称'),
               onChange: (event: AnyRecord) => setBranchQuery(String(event.target.value || '')),
             }),
           ),
@@ -1369,46 +1384,46 @@ interface SyncTabProps extends RepositoryTabProps {}
           return React.createElement('div', { className: 'gg-branch-row' + (branch.current ? ' current' : '') + (confirming || forcing ? ' confirming' : ''), key: branchName || String(index) },
             React.createElement('code', null, (branch.current ? '* ' : '') + branchName),
             branch.upstream ? React.createElement('span', { className: 'gg-idletext' }, String(branch.upstream)) : null,
-            branch.current ? null : React.createElement('button', { className: 'gg-btn', disabled: busy, onClick: () => { cancelDelete(); mutate('switch-branch', { name: branchName }) } }, '切换'),
+            branch.current ? null : React.createElement('button', { className: 'gg-btn', disabled: busy, onClick: () => { cancelDelete(); mutate('switch-branch', { name: branchName }) } }, t('切换')),
             branch.current || confirming || forcing ? null : React.createElement('button', {
               className: 'gg-btn', disabled: busy, onClick: () => { setConfirmDelete(branchName); setForceDelete(null); setRiskAccepted(false) },
-            }, '删除'),
+            }, t('删除')),
             confirming ? React.createElement('div', { className: 'gg-branch-confirm' },
-              React.createElement('span', null, `确定安全删除分支“${branchName}”吗？`),
+              React.createElement('span', null, t('确定安全删除分支“{0}”吗？', branchName)),
               React.createElement('div', { className: 'gg-branch-confirm-actions' },
-                React.createElement('button', { className: 'gg-btn danger', disabled: busy, onClick: () => deleteBranch(branchName, false) }, '确认安全删除'),
-                React.createElement('button', { className: 'gg-btn', disabled: busy, onClick: cancelDelete }, '取消'),
+                React.createElement('button', { className: 'gg-btn danger', disabled: busy, onClick: () => deleteBranch(branchName, false) }, t('确认安全删除')),
+                React.createElement('button', { className: 'gg-btn', disabled: busy, onClick: cancelDelete }, t('取消')),
               ),
             ) : null,
             forcing ? React.createElement('div', { className: 'gg-branch-confirm' },
-              React.createElement('div', { className: 'gg-riskline' }, `分支“${branchName}”包含未合并提交。强制删除可能导致这些提交永久丢失。`),
+              React.createElement('div', { className: 'gg-riskline' }, t('分支“{0}”包含未合并提交。强制删除可能导致这些提交永久丢失。', branchName)),
               React.createElement('label', { className: 'gg-check' },
                 React.createElement('input', { type: 'checkbox', checked: riskAccepted, disabled: busy, onChange: (event: AnyRecord) => setRiskAccepted(!!event.target.checked) }),
-                '我已知晓未合并提交可能永久丢失',
+                t('我已知晓未合并提交可能永久丢失'),
               ),
               React.createElement('div', { className: 'gg-branch-confirm-actions' },
-                React.createElement('button', { className: 'gg-btn danger', disabled: busy || !riskAccepted, onClick: () => deleteBranch(branchName, true) }, '强制删除'),
-                React.createElement('button', { className: 'gg-btn', disabled: busy, onClick: cancelDelete }, '取消'),
+                React.createElement('button', { className: 'gg-btn danger', disabled: busy || !riskAccepted, onClick: () => deleteBranch(branchName, true) }, t('强制删除')),
+                React.createElement('button', { className: 'gg-btn', disabled: busy, onClick: cancelDelete }, t('取消')),
               ),
             ) : null,
           )
-          }) : React.createElement('div', { className: 'gg-idletext gg-reference-empty' }, branches.length ? '没有匹配的本地分支。' : '没有本地分支。')),
+          }) : React.createElement('div', { className: 'gg-idletext gg-reference-empty' }, branches.length ? t('没有匹配的本地分支。') : t('没有本地分支。'))),
         ) : referenceTab === 'remote'
-          ? React.createElement('div', { className: 'gg-branch-list' }, referenceRows(remotes, '没有远程分支。'))
-          : React.createElement('div', { className: 'gg-branch-list' }, referenceRows(tags, '没有标签。')),
+          ? React.createElement('div', { className: 'gg-branch-list' }, referenceRows(remotes, t('没有远程分支。')))
+          : React.createElement('div', { className: 'gg-branch-list' }, referenceRows(tags, t('没有标签。'))),
         referenceTab === 'local' ? React.createElement('div', { className: 'gg-branch-form' },
           React.createElement('label', { className: 'gg-field', htmlFor: 'gg-new-branch-name' },
-            React.createElement('span', { className: 'gg-field-label' }, '新分支名称'),
-            React.createElement('input', { id: 'gg-new-branch-name', className: 'gg-input', value: name, placeholder: '例如：feature/login', disabled: busy, onChange: (event: AnyRecord) => setName(String(event.target.value || '')) }),
+            React.createElement('span', { className: 'gg-field-label' }, t('新分支名称')),
+            React.createElement('input', { id: 'gg-new-branch-name', className: 'gg-input', value: name, placeholder: t('例如：feature/login'), disabled: busy, onChange: (event: AnyRecord) => setName(String(event.target.value || '')) }),
           ),
           React.createElement('label', { className: 'gg-field', htmlFor: 'gg-new-branch-base' },
-            React.createElement('span', { className: 'gg-field-label' }, '基础分支'),
-            React.createElement('input', { id: 'gg-new-branch-base', className: 'gg-input', value: base, placeholder: '例如：main', disabled: busy, onChange: (event: AnyRecord) => setBase(String(event.target.value || '')) }),
+            React.createElement('span', { className: 'gg-field-label' }, t('基础分支')),
+            React.createElement('input', { id: 'gg-new-branch-base', className: 'gg-input', value: base, placeholder: t('例如：main'), disabled: busy, onChange: (event: AnyRecord) => setBase(String(event.target.value || '')) }),
           ),
           React.createElement('button', {
             className: 'gg-btn primary', disabled: busy || !name.trim() || !base.trim(),
             onClick: () => mutate('create-branch', { name, base }),
-          }, '新建分支'),
+          }, t('新建分支')),
         ) : null,
       )
     }
@@ -1592,38 +1607,38 @@ interface SyncTabProps extends RepositoryTabProps {}
       const rows = deriveCommitGraph(commits)
       const detailPanel = !selectedHash ? null : React.createElement('div', { className: 'gg-commit-detail' },
           React.createElement('div', { className: 'gg-commit-detail-head' },
-            React.createElement('strong', { className: 'gg-commit-detail-title' }, detail ? String(detail.subject || '（无提交说明）') : '提交详情'),
+            React.createElement('strong', { className: 'gg-commit-detail-title' }, detail ? String(detail.subject || t('（无提交说明）')) : t('提交详情')),
             detail ? React.createElement('code', { className: 'gg-commit-detail-hash', title: String(detail.hash || '') }, String(detail.hash || '').slice(0, 12)) : null,
             React.createElement('button', {
-              className: 'gg-btn gg-commit-detail-close', type: 'button', title: '关闭提交详情', 'aria-label': '关闭提交详情', onClick: clearSelection,
+              className: 'gg-btn gg-commit-detail-close', type: 'button', title: t('关闭提交详情'), 'aria-label': t('关闭提交详情'), onClick: clearSelection,
             }, '×'),
           ),
-          detailLoading ? React.createElement('div', { className: 'gg-idletext' }, '正在加载提交详情…') : null,
-          detailMessage ? React.createElement('div', { className: 'gg-workbench-error' }, detailMessage) : null,
+          detailLoading ? React.createElement('div', { className: 'gg-idletext' }, t('正在加载提交详情…')) : null,
+          detailMessage ? React.createElement('div', { className: 'gg-workbench-error' }, messageText(detailMessage)) : null,
           detail ? React.createElement(React.Fragment, null,
             React.createElement(GitCommitActions, { key: sessionId + selectedHash, sessionId, revision, rpc, hash: detail.hash, parents: detail.parents, onChanged: props.onChanged, onCommand: props.onCommand, onConflicts: props.onConflicts }),
             detail.body ? React.createElement('pre', { className: 'gg-commit-message' }, String(detail.body)) : null,
             React.createElement('dl', { className: 'gg-commit-detail-meta' },
-              React.createElement('dt', null, '作者'),
-              React.createElement('dd', null, String(detail.authorName || '未知作者') + (detail.authorEmail ? ' <' + String(detail.authorEmail) + '>' : '')),
-              React.createElement('dt', null, '作者时间'), React.createElement('dd', null, String(detail.authoredAt || '未知')),
-              React.createElement('dt', null, '提交者'),
-              React.createElement('dd', null, String(detail.committerName || '未知提交者') + (detail.committerEmail ? ' <' + String(detail.committerEmail) + '>' : '')),
-              React.createElement('dt', null, '提交时间'), React.createElement('dd', null, String(detail.committedAt || '未知')),
-              React.createElement('dt', null, '父提交'),
+              React.createElement('dt', null, t('作者')),
+              React.createElement('dd', null, String(detail.authorName || t('未知作者')) + (detail.authorEmail ? ' <' + String(detail.authorEmail) + '>' : '')),
+              React.createElement('dt', null, t('作者时间')), React.createElement('dd', null, String(detail.authoredAt || t('未知'))),
+              React.createElement('dt', null, t('提交者')),
+              React.createElement('dd', null, String(detail.committerName || t('未知提交者')) + (detail.committerEmail ? ' <' + String(detail.committerEmail) + '>' : '')),
+              React.createElement('dt', null, t('提交时间')), React.createElement('dd', null, String(detail.committedAt || t('未知'))),
+              React.createElement('dt', null, t('父提交')),
               React.createElement('dd', null, Array.isArray(detail.parents) && detail.parents.length
                 ? detail.parents.map((parent: string) => parent.slice(0, 12)).join(', ')
-                : '根提交'),
-              Array.isArray(detail.parents) && detail.parents.length > 1 ? React.createElement('dt', null, '差异基线') : null,
+                : t('根提交')),
+              Array.isArray(detail.parents) && detail.parents.length > 1 ? React.createElement('dt', null, t('差异基线')) : null,
               Array.isArray(detail.parents) && detail.parents.length > 1
-                ? React.createElement('dd', null, '第一父提交 ' + String(detail.comparisonBase || '').slice(0, 12))
+                ? React.createElement('dd', null, t('第一父提交 ') + String(detail.comparisonBase || '').slice(0, 12))
                 : null,
             ),
             React.createElement('div', { className: 'gg-commit-summary' },
-              React.createElement('span', null, String(detail.totals?.files ?? 0) + ' 个文件'),
+              React.createElement('span', null, String(detail.totals?.files ?? 0) + t(' 个文件')),
               React.createElement('span', { className: 'gg-additions' }, '+' + String(detail.totals?.additions ?? 0)),
               React.createElement('span', { className: 'gg-deletions' }, '-' + String(detail.totals?.deletions ?? 0)),
-              detail.totals?.binary ? React.createElement('span', null, String(detail.totals.binary) + ' 个二进制文件') : null,
+              detail.totals?.binary ? React.createElement('span', null, String(detail.totals.binary) + t(' 个二进制文件')) : null,
             ),
             React.createElement('div', { className: 'gg-commit-files' }, Array.isArray(detail.files) && detail.files.length
               ? detail.files.map((file: AnyRecord, index: number) => React.createElement('div', {
@@ -1633,32 +1648,32 @@ interface SyncTabProps extends RepositoryTabProps {}
               React.createElement('span', { className: 'gg-commit-file-path', title: String(file.path || '') },
                 file.previousPath ? String(file.previousPath) + ' → ' + String(file.path || '') : String(file.path || ''),
               ),
-              React.createElement('span', { className: 'gg-additions' }, file.additions === null ? '二进制' : '+' + String(file.additions)),
+              React.createElement('span', { className: 'gg-additions' }, file.additions === null ? t('二进制') : '+' + String(file.additions)),
               React.createElement('span', { className: 'gg-deletions' }, file.deletions === null ? '' : '-' + String(file.deletions)),
               ))
-              : React.createElement('div', { className: 'gg-idletext gg-reference-empty' }, '该提交没有可显示的文件变更。')),
-            detail.filesTruncated ? React.createElement('div', { className: 'gg-riskline' }, '文件列表过长，仅显示前 500 项。') : null,
+              : React.createElement('div', { className: 'gg-idletext gg-reference-empty' }, t('该提交没有可显示的文件变更。'))),
+            detail.filesTruncated ? React.createElement('div', { className: 'gg-riskline' }, t('文件列表过长，仅显示前 500 项。')) : null,
             React.createElement('button', { className: 'gg-btn', type: 'button', disabled: diffLoading, onClick: loadCommitDiff },
-              diffLoading ? '正在加载详细 Diff…' : commitDiff ? '重新加载详细 Diff' : '加载详细 Diff',
+              diffLoading ? t('正在加载详细 Diff…') : commitDiff ? t('重新加载详细 Diff') : t('加载详细 Diff'),
             ),
-            diffMessage ? React.createElement('div', { className: 'gg-workbench-error' }, diffMessage) : null,
+            diffMessage ? React.createElement('div', { className: 'gg-workbench-error' }, messageText(diffMessage)) : null,
             commitDiff ? React.createElement(React.Fragment, null,
-              commitDiff.truncated ? React.createElement('div', { className: 'gg-riskline' }, 'Diff 过长，已截断为前 300,000 个字符。') : null,
+              commitDiff.truncated ? React.createElement('div', { className: 'gg-riskline' }, t('Diff 过长，已截断为前 300,000 个字符。')) : null,
               React.createElement('pre', { className: 'gg-pre gg-diff-code gg-commit-diff' },
-                renderRawDiffSurface(String(commitDiff.diff || '没有可显示的差异。')),
+                renderRawDiffSurface(String(commitDiff.diff || t('没有可显示的差异。'))),
               ),
             ) : null,
           ) : null,
         )
       return React.createElement('section', { className: 'gg-tab-content' },
         React.createElement('div', { className: 'gg-tab-toolbar' },
-          React.createElement('span', { className: 'gg-section-heading' }, '提交记录', React.createElement('span', { className: 'gg-section-count' }, String(commits.length))),
+          React.createElement('span', { className: 'gg-section-heading' }, t('提交记录'), React.createElement('span', { className: 'gg-section-count' }, String(commits.length))),
           React.createElement('button', {
             className: 'gg-btn', disabled: refreshFeedback.state === 'loading',
             onClick: () => { void load(true) },
           }, refreshButtonLabel(refreshFeedback.state)),
         ),
-        message ? React.createElement('div', { className: 'gg-workbench-error' }, message) : null,
+        message ? React.createElement('div', { className: 'gg-workbench-error' }, messageText(message)) : null,
         React.createElement('div', { className: 'gg-commit-layout' },
           React.createElement('div', { className: 'gg-commit-list' }, rows.length ? rows.map((row: CommitGraphRow, index: number) => {
             const commit = row.commit
@@ -1676,18 +1691,18 @@ interface SyncTabProps extends RepositoryTabProps {}
             React.createElement(CommitGraph, { row }),
             React.createElement('div', { className: 'gg-commit-copy' },
               React.createElement('div', { className: 'gg-commit-main' },
-                React.createElement('span', { className: 'gg-commit-subject' }, String(commit.subject || '（无提交说明）')),
+                React.createElement('span', { className: 'gg-commit-subject' }, String(commit.subject || t('（无提交说明）'))),
                 React.createElement('span', { className: 'gg-commit-refs' }, refs.map((ref: AnyRecord, refIndex: number) => React.createElement('span', {
                   className: 'gg-ref ' + String(ref.type || 'branch') + (ref.current ? ' current' : ''),
                   key: String(ref.type || '') + ':' + String(ref.name || refIndex), title: String(ref.name || ''),
                 }, String(ref.name || '')))),
               ),
               React.createElement('div', { className: 'gg-commit-meta' },
-                React.createElement('span', { className: 'gg-commit-author' }, String(commit.author || '未知作者')),
+                React.createElement('span', { className: 'gg-commit-author' }, String(commit.author || t('未知作者'))),
                 React.createElement('code', { className: 'gg-commit-hash' }, hash.slice(0, 8)),
               ),
             ))
-          }) : React.createElement('div', { className: 'gg-idletext' }, '没有提交记录。')),
+          }) : React.createElement('div', { className: 'gg-idletext' }, t('没有提交记录。'))),
           detailPanel,
         ),
       )
@@ -1796,37 +1811,37 @@ interface SyncTabProps extends RepositoryTabProps {}
         ? { remote, branch: state.branch, setUpstream: true }
         : { setUpstream: false }
       const statusText = !state
-        ? '正在读取同步状态…'
+        ? t('正在读取同步状态…')
         : state.rebaseInProgress
-          ? 'Rebase 正在进行'
+          ? t('Rebase 正在进行')
           : state.conflictCount > 0
-            ? '存在 ' + state.conflictCount + ' 个冲突文件'
-            : state.dirty ? '工作区有未提交改动' : '工作区干净'
+            ? t('存在 {0} 个冲突文件', state.conflictCount)
+            : state.dirty ? t('工作区有未提交改动') : t('工作区干净')
 
       return React.createElement('section', { className: 'gg-tab-content' },
         React.createElement('div', { className: 'gg-tab-toolbar' },
           state
             ? renderRepositoryIdentity(state.topLevel, state.branch)
-            : React.createElement('span', { className: 'gg-section-heading' }, '正在读取仓库…'),
+            : React.createElement('span', { className: 'gg-section-heading' }, t('正在读取仓库…')),
           React.createElement('button', {
             className: 'gg-btn', type: 'button', disabled: busy || refreshFeedback.state === 'loading', onClick: () => { void load(true) },
           }, refreshButtonLabel(refreshFeedback.state)),
         ),
-        message ? React.createElement('div', { className: 'gg-workbench-error' }, message) : null,
+        message ? React.createElement('div', { className: 'gg-workbench-error' }, messageText(message)) : null,
         diagnostics ? React.createElement('pre', { className: 'gg-diagnostics' }, diagnostics) : null,
         state ? React.createElement('div', { className: 'gg-sync-grid' },
-          React.createElement('div', { className: 'gg-sync-card' }, React.createElement('strong', null, '上游分支'), React.createElement('code', { className: 'gg-sync-value' }, state.upstream || '未设置')),
-          React.createElement('div', { className: 'gg-sync-card' }, React.createElement('strong', null, '提交差异'), React.createElement('span', { className: 'gg-sync-value' }, '领先 ' + state.ahead + ' · 落后 ' + state.behind)),
-          React.createElement('div', { className: 'gg-sync-card' }, React.createElement('strong', null, '工作区'), React.createElement('span', { className: 'gg-sync-value' }, statusText)),
-          React.createElement('div', { className: 'gg-sync-card' }, React.createElement('strong', null, '远程仓库'), React.createElement('span', { className: 'gg-sync-value' }, state.remotes.join('、') || '未配置')),
+          React.createElement('div', { className: 'gg-sync-card' }, React.createElement('strong', null, t('上游分支')), React.createElement('code', { className: 'gg-sync-value' }, state.upstream || t('未设置'))),
+          React.createElement('div', { className: 'gg-sync-card' }, React.createElement('strong', null, t('提交差异')), React.createElement('span', { className: 'gg-sync-value' }, t('领先 ') + state.ahead + t(' · 落后 ') + state.behind)),
+          React.createElement('div', { className: 'gg-sync-card' }, React.createElement('strong', null, t('工作区')), React.createElement('span', { className: 'gg-sync-value' }, statusText)),
+          React.createElement('div', { className: 'gg-sync-card' }, React.createElement('strong', null, t('远程仓库')), React.createElement('span', { className: 'gg-sync-value' }, state.remotes.join('、') || t('未配置'))),
         ) : null,
-        React.createElement('button', { className: 'gg-btn', type: 'button', onClick: props.onConflicts }, '解决冲突 / Merge / Cherry-pick'),
-        !hasRemote && state ? React.createElement('div', { className: 'gg-sync-warning' }, '当前仓库没有远程仓库。请先在终端或后续的 Remote 管理功能中添加远程地址。') : null,
+        React.createElement('button', { className: 'gg-btn', type: 'button', onClick: props.onConflicts }, t('解决冲突 / Merge / Cherry-pick')),
+        !hasRemote && state ? React.createElement('div', { className: 'gg-sync-warning' }, t('当前仓库没有远程仓库。请先在终端或后续的 Remote 管理功能中添加远程地址。')) : null,
         React.createElement('div', { className: 'gg-sync-actions' },
-          React.createElement('strong', null, '远程同步'),
+          React.createElement('strong', null, t('远程同步')),
           React.createElement('div', { className: 'gg-sync-row' },
             React.createElement('label', { className: 'gg-field', htmlFor: 'gg-sync-remote' },
-              React.createElement('span', { className: 'gg-field-label' }, '远程仓库'),
+              React.createElement('span', { className: 'gg-field-label' }, t('远程仓库')),
               React.createElement('select', {
                 id: 'gg-sync-remote', className: 'gg-input', value: remote, disabled: busy || !hasRemote,
                 onChange: (event: AnyRecord) => setRemote(String(event.target.value || '')),
@@ -1838,25 +1853,25 @@ interface SyncTabProps extends RepositoryTabProps {}
             React.createElement('button', {
               className: 'gg-btn primary', type: 'button',
               disabled: busy || !state?.upstream || !canUseHistory,
-              title: state && !state.upstream ? '当前分支没有上游跟踪分支' : '仅允许快进，不会创建合并提交或改写历史',
+              title: state && !state.upstream ? t('当前分支没有上游跟踪分支') : t('仅允许快进，不会创建合并提交或改写历史'),
               onClick: () => { void run('pull') },
-            }, 'Pull（仅快进）'),
+            }, t('Pull（仅快进）')),
             React.createElement('button', {
               className: 'gg-btn primary', type: 'button',
               disabled: busy || !state?.branch || !canUseHistory || (!state?.upstream && !remote),
-              title: state && !state.upstream ? '首次推送会建立上游跟踪' : '推送当前分支到已配置上游',
+              title: state && !state.upstream ? t('首次推送会建立上游跟踪') : t('推送当前分支到已配置上游'),
               onClick: () => { void run('push', pushPayload) },
-            }, state?.upstream ? 'Push' : 'Push 并设置上游'),
+            }, state?.upstream ? 'Push' : t('Push 并设置上游')),
           ),
-          React.createElement('div', { className: 'gg-sync-note' }, 'Pull 固定执行 git pull --ff-only；若不能快进会停止并保留完整错误，不会自动合并。'),
+          React.createElement('div', { className: 'gg-sync-note' }, t('Pull 固定执行 git pull --ff-only；若不能快进会停止并保留完整错误，不会自动合并。')),
         ),
         React.createElement('div', { className: 'gg-sync-actions' },
-          React.createElement('strong', null, 'Rebase（高风险）'),
+          React.createElement('strong', null, t('Rebase（高风险）')),
           state?.rebaseInProgress ? React.createElement('div', { className: 'gg-sync-warning' }, state.conflictCount > 0
-            ? '请到“冲突解决”页处理并标记全部冲突，然后继续 Rebase。'
-            : '冲突已经解决并暂存，可以继续 Rebase；也可以中止并恢复到开始前。') : null,
+            ? t('请到“冲突解决”页处理并标记全部冲突，然后继续 Rebase。')
+            : t('冲突已经解决并暂存，可以继续 Rebase；也可以中止并恢复到开始前。')) : null,
           !state?.rebaseInProgress ? React.createElement('label', { className: 'gg-field', htmlFor: 'gg-rebase-target' },
-            React.createElement('span', { className: 'gg-field-label' }, '目标引用'),
+            React.createElement('span', { className: 'gg-field-label' }, t('目标引用')),
             React.createElement('select', {
               id: 'gg-rebase-target', className: 'gg-input', value: rebaseTarget, disabled: busy || targets.length === 0,
               onChange: (event: AnyRecord) => setRebaseTarget(String(event.target.value || '')),
@@ -1868,32 +1883,33 @@ interface SyncTabProps extends RepositoryTabProps {}
               onChange: (event: AnyRecord) => setRiskAccepted(event.target.checked === true),
             }),
             React.createElement('span', null, state?.rebaseInProgress
-              ? '我了解继续或中止 Rebase 可能改写历史或丢弃本次冲突处理'
-              : '我了解 Rebase 会重写当前分支的本地提交历史'),
+              ? t('我了解继续或中止 Rebase 可能改写历史或丢弃本次冲突处理')
+              : t('我了解 Rebase 会重写当前分支的本地提交历史')),
           ),
           state?.rebaseInProgress ? React.createElement('div', { className: 'gg-actions' },
             React.createElement('button', {
               className: 'gg-btn primary', type: 'button', disabled: busy || !riskAccepted || state.conflictCount > 0,
               onClick: () => { void run('rebase-continue', { confirmRisk: riskAccepted }) },
-            }, '继续 Rebase'),
+            }, t('继续 Rebase')),
             React.createElement('button', {
               className: 'gg-btn danger', type: 'button', disabled: busy || !riskAccepted,
               onClick: () => { void run('rebase-abort', { confirmRisk: riskAccepted }) },
-            }, '中止 Rebase'),
+            }, t('中止 Rebase')),
           ) : React.createElement('button', {
             className: 'gg-btn danger', type: 'button',
             disabled: busy || !riskAccepted || !rebaseTarget || !!state?.dirty,
-            title: state?.dirty ? '请先提交或贮藏工作区改动' : '将当前分支变基到所选引用',
+            title: state?.dirty ? t('请先提交或贮藏工作区改动') : t('将当前分支变基到所选引用'),
             onClick: () => { void run('rebase', { target: rebaseTarget, confirmRisk: riskAccepted }) },
-          }, '开始 Rebase'),
+          }, t('开始 Rebase')),
           React.createElement('div', { className: 'gg-sync-note' }, state?.dirty && !state.rebaseInProgress
-            ? '工作区有改动：为避免丢失内容，开始 Rebase 已禁用。'
-            : 'Rebase 发生冲突时会保留在当前页面；错误详情会交给现有建议与 Agent 分析流程。'),
+            ? t('工作区有改动：为避免丢失内容，开始 Rebase 已禁用。')
+            : t('Rebase 发生冲突时会保留在当前页面；错误详情会交给现有建议与 Agent 分析流程。')),
         ),
       )
     }
 
     function GitWorkbenchPanel(props: GitWorkbenchPanelProps) {
+      const language = useLanguage()
       const [tab, setTab] = React.useState('changes')
       const [chatExpanded, setChatExpanded] = React.useState(false)
       const [chat, setChat] = React.useState({ running: false, reply: '', error: '' })
@@ -2045,14 +2061,14 @@ interface SyncTabProps extends RepositoryTabProps {}
         if (element) element.scrollTop = element.scrollHeight
       }, [commandLogs])
       const tabs = [
-        { id: 'changes', label: '变更' },
-        { id: 'conflicts', label: '冲突解决' },
-        { id: 'branches', label: '分支' },
-        { id: 'merge', label: '合并分支' },
-        { id: 'commits', label: '提交记录' },
-        { id: 'stashes', label: '贮藏' },
-        { id: 'sync', label: '同步' },
-        { id: 'proposal', label: '建议' },
+        { id: 'changes', label: t('变更') },
+        { id: 'conflicts', label: t('冲突解决') },
+        { id: 'branches', label: t('分支') },
+        { id: 'merge', label: t('合并分支') },
+        { id: 'commits', label: t('提交记录') },
+        { id: 'stashes', label: t('贮藏') },
+        { id: 'sync', label: t('同步') },
+        { id: 'proposal', label: t('建议') },
       ]
       const onTabKeyDown = (event: AnyRecord, index: number) => {
         if (conflictDirty) return
@@ -2087,28 +2103,34 @@ interface SyncTabProps extends RepositoryTabProps {}
                 : React.createElement(GitDock, { sessionId: props.sessionId, intervalFn: props.intervalFn, timeoutFn: props.timeoutFn, onFailure: handleFailure, onCommand: reportCommand })
       const analyzing = chat.running || pendingAnalysis?.status === 'requesting' || pendingAnalysis?.status === 'waiting'
       const analysisBanner = tab === 'proposal' && (pendingAnalysis || chat.running || chat.reply || chat.error) ? React.createElement('div', { className: 'gg-analysis', role: 'status' },
-        React.createElement('strong', null, analyzing ? '正在分析 Git 问题…' : (pendingAnalysis?.status === 'error' || chat.error) ? '自动分析失败' : chat.reply ? '助手回复 · 可展开聊天继续讨论' : '分析已停止或未完成'),
+        React.createElement('strong', null, analyzing ? t('正在分析 Git 问题…') : (pendingAnalysis?.status === 'error' || chat.error) ? t('自动分析失败') : chat.reply ? t('助手回复 · 可展开聊天继续讨论') : t('分析已停止或未完成')),
         pendingAnalysis ? renderFailureDetails(pendingAnalysis.failure) : null,
         chat.reply && !chatExpanded ? React.createElement('div', { style: { whiteSpace: 'pre-wrap' } }, chat.reply) : null,
-        (pendingAnalysis?.error || chat.error) ? React.createElement('div', { role: 'alert', className: 'gg-workbench-error' }, pendingAnalysis?.error || chat.error) : null,
-        analyzing ? React.createElement('div', { className: 'gg-idletext' }, '助手正在读取信息并分析；修改命令仍需你点击确认执行。') : null,
+        (pendingAnalysis?.error || chat.error) ? React.createElement('div', { role: 'alert', className: 'gg-workbench-error' }, messageText(pendingAnalysis?.error || chat.error)) : null,
+        analyzing ? React.createElement('div', { className: 'gg-idletext' }, t('助手正在读取信息并分析；修改命令仍需你点击确认执行。')) : null,
         React.createElement('div', { className: 'gg-actions' },
-          analyzing ? React.createElement('button', { className: 'gg-btn', onClick: cancelAnalysis }, '取消分析') : null,
-          !analyzing && pendingAnalysis ? React.createElement('button', { className: 'gg-btn', onClick: () => requestAnalysis(true) }, '重新分析') : null,
-          React.createElement('button', { className: 'gg-btn', onClick: () => setChatExpanded(true) }, '展开聊天 / 补充信息'),
+          analyzing ? React.createElement('button', { className: 'gg-btn', onClick: cancelAnalysis }, t('取消分析')) : null,
+          !analyzing && pendingAnalysis ? React.createElement('button', { className: 'gg-btn', onClick: () => requestAnalysis(true) }, t('重新分析')) : null,
+          React.createElement('button', { className: 'gg-btn', onClick: () => setChatExpanded(true) }, t('展开聊天 / 补充信息')),
         ),
       ) : null
       return React.createElement('aside', {
-        className: 'gg-workbench', 'aria-label': 'Git 工作台',
+        className: 'gg-workbench', 'aria-label': t('Git 工作台'), lang: language,
       },
         React.createElement('div', { className: 'gg-workbench-head' },
-          React.createElement('span', { className: 'gg-workbench-title' }, 'Git 工作台'),
+          React.createElement('span', { className: 'gg-workbench-title' }, t('Git 工作台')),
+          React.createElement('div', { className: 'gg-workbench-head-actions' },
+            React.createElement('div', { className: 'gg-language', role: 'group', 'aria-label': t('界面语言') },
+              React.createElement('button', { type: 'button', lang: 'zh-CN', 'aria-pressed': language === 'zh-CN', title: t('切换为简体中文'), onClick: () => setLanguage('zh-CN') }, '中文'),
+              React.createElement('button', { type: 'button', lang: 'en', 'aria-pressed': language === 'en', title: t('切换为英文'), onClick: () => setLanguage('en') }, 'EN'),
+            ),
           React.createElement('button', {
-            type: 'button', className: 'gg-btn gg-workbench-close', title: '关闭 Git 工作台', 'aria-label': '关闭 Git 工作台', onClick: props.close,
+            type: 'button', className: 'gg-btn gg-workbench-close', title: t('关闭 Git 工作台'), 'aria-label': t('关闭 Git 工作台'), onClick: props.close,
           }, '×'),
+          ),
         ),
         React.createElement('div', { className: 'gg-workbench-body' + (tab === 'proposal' ? ' gg-with-chat' : '') },
-          React.createElement('div', { className: 'gg-tabs', role: 'tablist', 'aria-label': 'Git 工作台区域' }, tabs.map((entry: { id: string; label: string }, index: number) => React.createElement('button', {
+          React.createElement('div', { className: 'gg-tabs', role: 'tablist', 'aria-label': t('Git 工作台区域') }, tabs.map((entry: { id: string; label: string }, index: number) => React.createElement('button', {
             className: 'gg-tab' + (tab === entry.id ? ' active' : ''), type: 'button', role: 'tab',
             id: 'gg-tab-' + entry.id, 'aria-controls': 'gg-panel-' + entry.id,
             'aria-selected': tab === entry.id, tabIndex: tab === entry.id ? 0 : -1,
@@ -2116,19 +2138,19 @@ interface SyncTabProps extends RepositoryTabProps {}
           }, entry.label))),
           React.createElement('div', {
             className: 'gg-tab-panel', id: 'gg-panel-' + tab, role: 'tabpanel', 'aria-labelledby': 'gg-tab-' + tab,
-          }, tab === 'proposal' ? React.createElement('button', { className: 'gg-btn gg-chat-toggle', 'aria-expanded': chatExpanded, onClick: () => setChatExpanded(!chatExpanded) }, chatExpanded ? '收起聊天' : '展开 Git 助手聊天') : null,
+          }, tab === 'proposal' ? React.createElement('button', { className: 'gg-btn gg-chat-toggle', 'aria-expanded': chatExpanded, onClick: () => setChatExpanded(!chatExpanded) }, chatExpanded ? t('收起聊天') : t('展开 Git 助手聊天')) : null,
           tab === 'proposal' ? props.renderChat(chatExpanded) : null,
           tab === 'proposal' ? React.createElement('div', { className: 'gg-suggestions' }, analysisBanner, pendingAnalysis ? null : content) : content),
         ),
-        React.createElement('section', { className: 'gg-command-log', 'aria-label': '命令日志' },
-          React.createElement('strong', { className: 'gg-command-log-head' }, '命令日志'),
+        React.createElement('section', { className: 'gg-command-log', 'aria-label': t('命令日志') },
+          React.createElement('strong', { className: 'gg-command-log-head' }, t('命令日志')),
           React.createElement('div', { className: 'gg-command-log-body', ref: commandLogBodyRef }, commandLogs.length
             ? commandLogs.map((entry: CommandLogEntry) => React.createElement('div', { className: 'gg-command-entry', key: entry.id },
-              React.createElement('span', { className: 'gg-command-label' }, entry.label),
-              React.createElement('span', { className: 'gg-command-status ' + entry.status }, entry.status === 'running' ? '执行中' : entry.status === 'succeeded' ? '成功' : '失败'),
-              React.createElement('code', { className: 'gg-command-code' }, entry.command),
+              React.createElement('span', { className: 'gg-command-label' }, t(entry.label)),
+              React.createElement('span', { className: 'gg-command-status ' + entry.status }, entry.status === 'running' ? t('执行中') : entry.status === 'succeeded' ? t('成功') : t('失败')),
+              React.createElement('code', { className: 'gg-command-code' }, /^(保存工作区文件 |标记解决 )/.test(entry.command) ? messageText(entry.command) : entry.command),
             ))
-            : React.createElement('div', { className: 'gg-idletext' }, '尚未执行修改命令。')),
+            : React.createElement('div', { className: 'gg-idletext' }, t('尚未执行修改命令。'))),
         ),
       )
     }
@@ -2240,8 +2262,8 @@ interface SyncTabProps extends RepositoryTabProps {}
       if (!view) {
         return React.createElement('div', { className: 'gg-dock' },
           React.createElement('div', { className: 'gg-idle' },
-            React.createElement('span', { className: 'gg-badge normal' }, 'Git 操作建议 · 空闲'),
-            React.createElement('span', { className: 'gg-idletext' }, '等待新的 git 操作提议…（git_propose 登记后这里会出现命令与按钮）'),
+            React.createElement('span', { className: 'gg-badge normal' }, t('Git 操作建议 · 空闲')),
+            React.createElement('span', { className: 'gg-idletext' }, t('等待新的 git 操作提议…（git_propose 登记后这里会出现命令与按钮）')),
           ),
         )
       }
@@ -2255,10 +2277,10 @@ interface SyncTabProps extends RepositoryTabProps {}
       const locallySucceeded = outcome?.ok === true
       const canRun = isPending && !locallyFailed && !locallySucceeded && !busy && (!isHard || understood)
       const canCopy = isPending && !locallyFailed && !locallySucceeded && !busy && (!isHard || understood)
-      const proposalStatus = ranInfo || locallySucceeded || ['succeeded', 'verified'].includes(proposal.status) ? '已完成'
-        : busy || proposal.status === 'running' ? '执行中'
-        : locallyFailed || proposal.status === 'failed' ? '执行失败'
-        : isCopied ? '待验证' : '待确认'
+      const proposalStatus = ranInfo || locallySucceeded || ['succeeded', 'verified'].includes(proposal.status) ? t('已完成')
+        : busy || proposal.status === 'running' ? t('执行中')
+        : locallyFailed || proposal.status === 'failed' ? t('执行失败')
+        : isCopied ? t('待验证') : t('待确认')
 
       const onRun = () => {
         if (!canRun) return
@@ -2327,7 +2349,7 @@ interface SyncTabProps extends RepositoryTabProps {}
           .catch((err) => { setVerifyMsg(errorText(err)) })
       }
 
-      const riskLabel = isHard ? '高风险' : proposal.risk === 'safe' ? '安全' : '常规'
+      const riskLabel = isHard ? t('高风险') : proposal.risk === 'safe' ? t('安全') : t('常规')
       const badgeCls = isHard ? 'gg-badge hard' : proposal.risk === 'safe' ? 'gg-badge safe' : 'gg-badge normal'
 
       const renderSteps = () => steps.map((s: AnyRecord, i: number) => React.createElement('div', { className: 'gg-step', key: 'step' + i },
@@ -2337,10 +2359,10 @@ interface SyncTabProps extends RepositoryTabProps {}
 
       const headerEl = React.createElement('div', { className: 'gg-head', key: 'head' },
         renderGitIcon(),
-        React.createElement('span', null, 'Git 操作建议'),
+        React.createElement('span', null, t('Git 操作建议')),
         React.createElement('span', { className: badgeCls }, riskLabel),
         React.createElement('span', { className: 'gg-proposal-status', role: 'status', 'aria-live': 'polite' }, proposalStatus),
-        React.createElement('button', { className: 'gg-btn gg-toggle', type: 'button', 'aria-expanded': !collapsed, 'aria-label': collapsed ? '展开操作建议' : '收起操作建议', onClick: () => setCollapsed(!collapsed), title: collapsed ? '展开' : '收缩' },
+        React.createElement('button', { className: 'gg-btn gg-toggle', type: 'button', 'aria-expanded': !collapsed, 'aria-label': collapsed ? t('展开操作建议') : t('收起操作建议'), onClick: () => setCollapsed(!collapsed), title: collapsed ? t('展开') : t('收缩') },
           collapsed ? '▸' : '▾',
         ),
       )
@@ -2350,7 +2372,7 @@ interface SyncTabProps extends RepositoryTabProps {}
       }
 
       const lines = [headerEl]
-      if (proposal.intent) lines.push(React.createElement('div', { className: 'gg-intent', key: 'intent' }, String(proposal.intent)))
+      if (proposal.intent) lines.push(React.createElement('div', { className: 'gg-intent', key: 'intent' }, proposal.failure ? messageText(String(proposal.intent)) : String(proposal.intent)))
       lines.push(React.createElement('div', { className: 'gg-steps', key: 'steps' }, renderSteps()))
       if (proposal.failure) {
         lines.push(React.createElement('div', { key: 'failure' }, renderFailureDetails(proposal.failure, proposal.recoverySuggestion || '')))
@@ -2359,65 +2381,65 @@ interface SyncTabProps extends RepositoryTabProps {}
       }
 
       if (ranInfo) {
-        lines.push(React.createElement('div', { className: 'gg-ok gg-ran gg-proposal-result', key: 'ran', role: 'status' }, '✔ 检测到预期结果已达成（已执行），即将关闭此建议'))
-        lines.push(React.createElement('pre', { className: 'gg-pre', key: 'ranstate' }, String(ranInfo)))
+        lines.push(React.createElement('div', { className: 'gg-ok gg-ran gg-proposal-result', key: 'ran', role: 'status' }, t('✔ 检测到预期结果已达成（已执行），即将关闭此建议')))
+        lines.push(React.createElement('pre', { className: 'gg-pre', key: 'ranstate' }, messageText(String(ranInfo))))
         return React.createElement('div', { className: 'gg-dock gg-dock-full' }, lines)
       }
 
       if (partialInfo) {
-        lines.push(React.createElement('div', { className: 'gg-riskline', key: 'pmsg' }, '⚠ ' + String(partialInfo.message)))
+        lines.push(React.createElement('div', { className: 'gg-riskline', key: 'pmsg' }, '⚠ ' + messageText(String(partialInfo.message))))
         if (partialInfo.state) lines.push(React.createElement('pre', { className: 'gg-pre', key: 'pstate' }, String(partialInfo.state)))
         const acts = []
-        acts.push(React.createElement('button', { key: 'verify', className: 'gg-btn primary', onClick: onVerify }, '重新检测'))
-        acts.push(React.createElement('button', { key: 'drop', className: 'gg-btn', onClick: () => doDismiss(proposal.proposalId) }, '放弃建议'))
+        acts.push(React.createElement('button', { key: 'verify', className: 'gg-btn primary', onClick: onVerify }, t('重新检测')))
+        acts.push(React.createElement('button', { key: 'drop', className: 'gg-btn', onClick: () => doDismiss(proposal.proposalId) }, t('放弃建议')))
         lines.push(React.createElement('div', { className: 'gg-actions', key: 'actions' }, acts))
         return React.createElement('div', { className: 'gg-dock gg-dock-full' }, lines)
       }
 
       if (isCopied && isPending) {
-        lines.push(React.createElement('div', { className: 'gg-intent', key: 'copied' }, '命令已用 && 连接后复制，任一步失败都会停止。面板会比对复制前后的目标状态。'))
-        if (verifyMsg) lines.push(React.createElement('div', { className: 'gg-riskline', key: 'vmsg' }, verifyMsg))
+        lines.push(React.createElement('div', { className: 'gg-intent', key: 'copied' }, t('命令已用 && 连接后复制，任一步失败都会停止。面板会比对复制前后的目标状态。')))
+        if (verifyMsg) lines.push(React.createElement('div', { className: 'gg-riskline', key: 'vmsg' }, messageText(verifyMsg)))
         const acts = []
-        acts.push(React.createElement('button', { key: 'verify', className: 'gg-btn primary', onClick: onVerify }, '重新检测'))
-        acts.push(React.createElement('button', { key: 'drop', className: 'gg-btn', onClick: () => doDismiss(proposal.proposalId) }, '放弃建议'))
+        acts.push(React.createElement('button', { key: 'verify', className: 'gg-btn primary', onClick: onVerify }, t('重新检测')))
+        acts.push(React.createElement('button', { key: 'drop', className: 'gg-btn', onClick: () => doDismiss(proposal.proposalId) }, t('放弃建议')))
         lines.push(React.createElement('div', { className: 'gg-actions', key: 'actions' }, acts))
         return React.createElement('div', { className: 'gg-dock gg-dock-full' }, lines)
       }
 
       if (proposal.status === 'running') {
-        lines.push(React.createElement('div', { className: 'gg-intent', key: 'running' }, '命令正在执行，请勿重复提交…'))
+        lines.push(React.createElement('div', { className: 'gg-intent', key: 'running' }, t('命令正在执行，请勿重复提交…')))
       } else if (proposal.status === 'failed') {
-        lines.push(React.createElement('div', { className: 'gg-riskline', key: 'failed' }, '该提议已经失败并锁定。请根据诊断创建修正提议，不会自动重放。'))
+        lines.push(React.createElement('div', { className: 'gg-riskline', key: 'failed' }, t('该提议已经失败并锁定。请根据诊断创建修正提议，不会自动重放。')))
         if (canDismissFailedProposal(proposal.needsAgentAnalysis)) {
           lines.push(React.createElement('div', { className: 'gg-actions', key: 'failed-actions' },
-            React.createElement('button', { className: 'gg-btn', onClick: () => doDismiss(proposal.proposalId) }, '关闭失败提议'),
+            React.createElement('button', { className: 'gg-btn', onClick: () => doDismiss(proposal.proposalId) }, t('关闭失败提议')),
           ))
         }
       }
       if (isPending || proposal.status === 'running') {
         if (isHard) {
-          lines.push(React.createElement('div', { className: 'gg-riskline', key: 'risk' }, '⚠ ' + ((proposal.reasons && proposal.reasons.length) ? proposal.reasons.join('；') : '该操作风险较高，可能造成不可逆的改动')))
+          lines.push(React.createElement('div', { className: 'gg-riskline', key: 'risk' }, '⚠ ' + ((proposal.reasons && proposal.reasons.length) ? proposal.reasons.map(messageText).join(getLanguage() === 'en' ? '; ' : '；') : t('该操作风险较高，可能造成不可逆的改动'))))
           lines.push(React.createElement('label', { className: 'gg-check', key: 'ck' },
             React.createElement('input', { type: 'checkbox', checked: understood, onChange: (e: { target: { checked: boolean } }) => setUnderstood(e.target.checked) }),
-            React.createElement('span', null, '我已了解风险，确认执行或复制'),
+            React.createElement('span', null, t('我已了解风险，确认执行或复制')),
           ))
         }
         const actions = []
         actions.push(React.createElement('button', { key: 'run', className: 'gg-btn gg-proposal-run ' + (isHard ? 'danger' : 'primary'), disabled: !canRun, 'aria-busy': busy || proposal.status === 'running', 'data-state': locallySucceeded ? 'succeeded' : undefined, onClick: onRun },
-          busy || proposal.status === 'running' ? '执行中…' : locallySucceeded ? '已执行' : (isHard ? '确认并直接执行' : '直接执行')))
-        actions.push(React.createElement('button', { key: 'copy', className: 'gg-btn', disabled: !canCopy, onClick: onCopy }, '复制命令（手动执行）'))
+          busy || proposal.status === 'running' ? t('执行中…') : locallySucceeded ? t('已执行') : (isHard ? t('确认并直接执行') : t('直接执行'))))
+        actions.push(React.createElement('button', { key: 'copy', className: 'gg-btn', disabled: !canCopy, onClick: onCopy }, t('复制命令（手动执行）')))
         lines.push(React.createElement('div', { className: 'gg-actions', key: 'actions' }, actions))
       }
 
       if (outcome) {
         const ok = outcome.ok === true
         const oLines = []
-        if (outcome.error) oLines.push(String(outcome.error))
+        if (outcome.error) oLines.push(messageText(String(outcome.error)))
         if (outcome.stdout) oLines.push(String(outcome.stdout))
         if (outcome.stderr) oLines.push(String(outcome.stderr))
-        const text = oLines.join('\n').trim() || '（无输出）'
+        const text = oLines.join('\n').trim() || t('（无输出）')
         lines.push(React.createElement('div', { className: 'gg-out gg-proposal-result', key: 'out', role: 'status', 'aria-live': 'polite' },
-          React.createElement('div', { className: ok ? 'gg-ok' : 'gg-fail' }, ok ? '✔ 执行成功' : '✘ 执行失败'),
+          React.createElement('div', { className: ok ? 'gg-ok' : 'gg-fail' }, ok ? t('✔ 执行成功') : t('✘ 执行失败')),
           React.createElement('pre', null, text),
         ))
         if (outcome.steps && outcome.steps.length) {
@@ -2429,21 +2451,21 @@ interface SyncTabProps extends RepositoryTabProps {}
         }
         if (!ok) {
           if (outcome.diagnostics) lines.push(React.createElement('div', { className: 'gg-out', key: 'diag' },
-            React.createElement('div', { className: 'gg-intent' }, '仓库诊断信息：'),
+            React.createElement('div', { className: 'gg-intent' }, t('仓库诊断信息：')),
             React.createElement('pre', null, String(outcome.diagnostics)),
           ))
           if (outcome.recovery && outcome.recovery.command) {
             lines.push(React.createElement('div', { className: 'gg-out gg-recovery', key: 'recovery' },
-              React.createElement('div', { className: 'gg-ok' }, '💡 已生成修正建议' + (outcome.recovery.proposalId ? '（已登记为新的提议，可直接执行）' : '')),
-              React.createElement('div', { className: 'gg-intent' }, String(outcome.recovery.suggestion || '')),
+              React.createElement('div', { className: 'gg-ok' }, t('💡 已生成修正建议') + (outcome.recovery.proposalId ? t('（已登记为新的提议，可直接执行）') : '')),
+              React.createElement('div', { className: 'gg-intent' }, messageText(String(outcome.recovery.suggestion || ''))),
               React.createElement('code', { className: 'gg-stepcode' }, String(outcome.recovery.command)),
             ))
           } else if (outcome.recovery && outcome.recovery.suggestion) {
             lines.push(React.createElement('div', { className: 'gg-out gg-recovery', key: 'recovery' },
-              React.createElement('div', { className: 'gg-riskline' }, '💡 ' + String(outcome.recovery.suggestion)),
+              React.createElement('div', { className: 'gg-riskline' }, '💡 ' + messageText(String(outcome.recovery.suggestion))),
             ))
           } else {
-            lines.push(React.createElement('div', { className: 'gg-intent', key: 'hint' }, '执行失败。你可以描述下一步，或让我分析原因并给出修正命令。'))
+            lines.push(React.createElement('div', { className: 'gg-intent', key: 'hint' }, t('执行失败。你可以描述下一步，或让我分析原因并给出修正命令。')))
           }
         }
       }
@@ -2469,11 +2491,12 @@ interface SyncTabProps extends RepositoryTabProps {}
           timeoutFn,
         }))
         slots.inject('conversation.input.left', () => slots.register(
-          { name: 'conversation.input.left', id: 'git-workbench', order: 30, label: 'Git 工作台' },
+          { name: 'conversation.input.left', id: 'git-workbench', order: 30, label: t('Git 工作台') },
           (props: AnyRecord) => sideChatSessions.has(props.sessionId) ? null : React.createElement(GitWorkbenchAction, { sessionId: props.sessionId, openWorkbench, intervalFn }),
         ))
       },
       __testing: {
+        t, messageText, setLanguage, getLanguage, useLanguage,
         rpc, openSideChat,
         GitDock,
         GitWorkbenchPanel,

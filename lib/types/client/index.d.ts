@@ -1,3 +1,4 @@
+import { t, messageText, useLanguage, setLanguage, getLanguage } from './i18n';
 import { GitConflictsTab } from './conflict-tab';
 import { GitStashesTab } from './stash-tab';
 import { GitMergeTab } from './merge-tab';
@@ -45,6 +46,11 @@ declare const plugin: {
     inject: string[];
     apply(ctx: AnyRecord): void;
     __testing: {
+        t: typeof t;
+        messageText: typeof messageText;
+        setLanguage: typeof setLanguage;
+        getLanguage: typeof getLanguage;
+        useLanguage: typeof useLanguage;
         rpc: typeof rpc;
         openSideChat: typeof openSideChat;
         GitDock: typeof GitDock;

@@ -3,9 +3,10 @@
 const { test } = require('node:test')
 const assert = require('node:assert')
 
-function loadClientPlugin(reactOverrides = {}) {
+function loadClientPlugin(reactOverrides = {}, browser = {}) {
   let clientPlugin
-  const react = { createElement: (...args) => ({ args }), ...reactOverrides }
+  const react = { createElement: (...args) => ({ args }), useSyncExternalStore: (_subscribe, getSnapshot) => getSnapshot(), ...reactOverrides }
+  const previousWindow = global.window
   global.window = {
     __ModuleLoader__: {
       load(definition) {
@@ -17,11 +18,13 @@ function loadClientPlugin(reactOverrides = {}) {
       },
     },
   }
+  Object.defineProperties(global.window, Object.getOwnPropertyDescriptors(browser))
   try {
     delete require.cache[require.resolve('../lib/client')]
     require('../lib/client')
   } finally {
-    delete global.window
+    if (previousWindow === undefined) delete global.window
+    else global.window = previousWindow
   }
   return clientPlugin
 }
@@ -660,7 +663,7 @@ function stashHarness(rpc, componentName = 'GitStashesTab') {
   let cursor = 0
   let tree
   const pending = []
-  const component = loadClientPlugin({
+  const testing = loadClientPlugin({
     useState(initial) {
       const index = cursor++
       if (!(index in slots)) slots[index] = initial
@@ -678,7 +681,8 @@ function stashHarness(rpc, componentName = 'GitStashesTab') {
         pending.push(() => { previous?.cleanup?.(); slots[index] = { deps, cleanup: effect() } })
       }
     },
-  }).__testing[componentName]
+  }).__testing
+  const component = testing[componentName]
   const requests = []
   const props = {
     sessionId: 'stash-ui', revision: 0, onChanged() {}, onConflicts() {}, onCommand: () => () => {},
@@ -687,6 +691,7 @@ function stashHarness(rpc, componentName = 'GitStashesTab') {
   }
   const nodes = value => !value ? [] : Array.isArray(value) ? value.flatMap(nodes) : value.args ? [value, ...value.args.slice(2).flatMap(nodes)] : []
   return {
+    setLanguage: testing.setLanguage,
     requests, props,
     async render() {
       cursor = 0; tree = component(props)
@@ -698,6 +703,135 @@ function stashHarness(rpc, componentName = 'GitStashesTab') {
     cleanup() { slots.forEach(slot => slot?.cleanup?.()) },
   }
 }
+
+test('界面语言持久化、订阅通知及存储不可用时的降级', () => {
+  const saved = new Map()
+  const browser = { localStorage: { getItem: key => saved.get(key), setItem: (key, value) => saved.set(key, value) } }
+  let unsubscribe, notifications = 0
+  const api = loadClientPlugin({ useSyncExternalStore(subscribe, getSnapshot) { unsubscribe = subscribe(() => notifications++); return getSnapshot() } }, browser).__testing
+  const previous = global.window
+  try {
+    global.window = browser
+    assert.equal(api.useLanguage(), 'zh-CN')
+    api.setLanguage('en')
+    assert.equal(api.t('Git 工作台'), 'Git Workbench')
+    assert.equal(notifications, 1)
+    api.setLanguage('en'); api.setLanguage('invalid')
+    assert.equal(notifications, 1)
+    assert.equal(loadClientPlugin({}, browser).__testing.getLanguage(), 'en', '重新加载模块后恢复选择')
+    unsubscribe()
+    api.setLanguage('zh-CN')
+    assert.equal(notifications, 1)
+    assert.equal(loadClientPlugin({}, browser).__testing.getLanguage(), 'zh-CN')
+    const blocked = { get localStorage() { throw new Error('storage blocked') } }
+    const fallback = loadClientPlugin({}, blocked).__testing
+    global.window = blocked
+    assert.equal(fallback.getLanguage(), 'zh-CN')
+    assert.doesNotThrow(() => fallback.setLanguage('en'))
+    assert.equal(fallback.t('变更'), 'Changes')
+  } finally { if (previous === undefined) delete global.window; else global.window = previous }
+})
+
+test('英文翻译覆盖界面静态文案，保留插值、未知消息和原始诊断', () => {
+  const { readFileSync, readdirSync } = require('node:fs')
+  const { join } = require('node:path')
+  const ts = require('typescript')
+  const api = loadClientPlugin().__testing
+  api.setLanguage('en')
+  for (const file of readdirSync(join(__dirname, '../src/client')).filter(file => file.endsWith('.ts'))) {
+    const source = ts.createSourceFile(file, readFileSync(join(__dirname, '../src/client', file), 'utf8'), ts.ScriptTarget.Latest, true)
+    const visit = node => {
+      if (ts.isCallExpression(node) && node.expression.getText(source) === 't' && ts.isStringLiteral(node.arguments[0])) {
+        const key = node.arguments[0].text
+        assert.notEqual(api.t(key), key, `${file} 缺少翻译：${key}`)
+        assert.doesNotMatch(api.t(key), /\p{Script=Han}/u, `${file} 英文含中文：${key}`)
+      }
+      ts.forEachChild(node, visit)
+    }
+    visit(source)
+  }
+  const branch = '中文分支/{0}/$&'
+  assert.equal(api.t('确定安全删除分支“{0}”吗？', branch), `Safely delete branch “${branch}”?`)
+  assert.equal(api.messageText('文件超过 48 KiB，请使用外部工具处理'), 'File exceeds 48 KiB; use external tools')
+  assert.equal(api.messageText('上下文同步失败：外部错误'), 'Context sync failed: 外部错误')
+  assert.equal(api.messageText('提交失败\n原始 Git 输出：变更'), 'Commit failed\n原始 Git 输出：变更')
+  for (const raw of ['未知错误：保持原样', 'constructor', '__proto__']) assert.equal(api.messageText(raw), raw)
+  assert.equal(api.t('constructor'), 'constructor')
+})
+
+test('24px 语言控件位于标题栏关闭按钮左侧，切换保留当前页与日志', async t => {
+  t.mock.method(global, 'fetch', async () => ({ json: async () => ({ ok: true, proposal: null, chat: { running: false, reply: '' } }) }))
+  const ui = stashHarness(() => { throw new Error('unexpected RPC') }, 'GitWorkbenchPanel')
+  Object.assign(ui.props, { close() {}, renderChat: () => null, intervalFn: () => () => {} })
+  try {
+    await ui.render(); await ui.render()
+    const actions = ui.nodes().find(node => node.args[1]?.className === 'gg-workbench-head-actions')
+    assert.equal(actions.args[2].args[1].className, 'gg-language')
+    assert.equal(actions.args[3].args[2], '×')
+    const child = ui.nodes().find(node => typeof node.args[0] === 'function' && node.args[1]?.onCommand)
+    child.args[1].onCommand('暂存文件', 'git add -- 中文.txt')(true)
+    ui.button('贮藏').args[1].onClick(); await ui.render()
+    ui.button('EN').args[1].onClick(); await ui.render()
+    assert.equal(ui.button('EN').args[1]['aria-pressed'], true)
+    assert.equal(ui.nodes().find(node => node.args[1]?.className === 'gg-tab-panel').args[1].id, 'gg-panel-stashes')
+    assert.ok(ui.nodes().some(node => node.args[2] === 'Stage files'))
+    assert.ok(ui.nodes().some(node => node.args[2] === 'git add -- 中文.txt'))
+    assert.deepEqual(ui.nodes().filter(node => node.args[1]?.role === 'tab').map(node => node.args[2]), ['Changes', 'Conflicts', 'Branches', 'Merge', 'History', 'Stashes', 'Sync', 'Suggestions'])
+    ui.button('中文').args[1].onClick(); await ui.render()
+    assert.ok(ui.nodes().some(node => node.args[2] === '暂存文件'))
+    const source = require('node:fs').readFileSync(require('node:path').join(__dirname, '../src/client/index.ts'), 'utf8')
+    assert.match(source, /\.gg-language \{[^}]*height: 24px/)
+  } finally { ui.cleanup() }
+})
+
+test('贮藏切换语言保留输入、文件选择与失败反馈，不重复请求', async () => {
+  const file = { path: '中文.txt', indexStatus: 'M', workTreeStatus: ' ' }
+  const ui = stashHarness(request => {
+    if (request.action === 'get-stashes') return { ok: true, data: [] }
+    if (request.action === 'get-summary') return { ok: true, data: { files: [file] } }
+    if (request.action === 'create-stash') return { ok: false, message: '创建贮藏失败，请刷新确认当前状态' }
+    throw new Error(request.action)
+  })
+  try {
+    await ui.render(); await ui.render()
+    ui.nodes().find(node => node.args[0] === 'textarea').args[1].onChange({ target: { value: '我的草稿\n第二行' } })
+    await ui.render()
+    await ui.button('创建贮藏').args[1].onClick(); await ui.render(); await ui.render()
+    const requests = ui.requests.length
+    ui.setLanguage('en'); await ui.render()
+    assert.equal(ui.requests.length, requests)
+    assert.equal(ui.nodes().find(node => node.args[0] === 'textarea').args[1].value, '我的草稿\n第二行')
+    assert.ok(ui.nodes().some(node => node.args[2] === '中文.txt'))
+    assert.ok(ui.nodes().some(node => node.args[2] === 'Failed to create stash; refresh to check the current state'))
+    assert.ok(ui.button('Create stash'))
+    ui.setLanguage('zh-CN'); await ui.render()
+    assert.ok(ui.nodes().some(node => node.args[2] === '创建贮藏失败，请刷新确认当前状态'))
+  } finally { ui.cleanup() }
+})
+
+test('冲突编辑草稿及风险确认在语言切换后保留', async t => {
+  const previous = global.window
+  global.window = { addEventListener() {}, removeEventListener() {} }
+  const version = text => ({ exists: true, text, mode: '100644', reason: null })
+  const detail = { path: '中文.txt', token: 'snapshot', operation: 'merge', ours: version('当前方内容'), theirs: version('传入方内容'), result: version('初始内容'), editable: true, special: false }
+  const ui = stashHarness(request => ({ ok: true, data: request.action === 'get-conflict' ? detail : { operation: 'merge', operationToken: 'operation', files: [{ path: '中文.txt', kind: '双方修改' }] } }), 'GitConflictsTab')
+  ui.props.onDirty = () => {}
+  try {
+    await ui.render(); await ui.render()
+    await ui.button('中文.txt · 双方修改').args[1].onClick(); await ui.render()
+    ui.nodes().find(node => node.args[0] === 'textarea').args[1].onChange({ currentTarget: { value: '未保存草稿\n保持原文' } })
+    ui.nodes().find(node => node.args[0] === 'input' && node.args[1].type === 'checkbox').args[1].onChange({ currentTarget: { checked: true } })
+    await ui.render()
+    const requests = ui.requests.length
+    ui.setLanguage('en'); await ui.render()
+    assert.equal(ui.requests.length, requests)
+    assert.equal(ui.nodes().find(node => node.args[0] === 'textarea').args[1].value, '未保存草稿\n保持原文')
+    assert.equal(ui.nodes().find(node => node.args[0] === 'input' && node.args[1].type === 'checkbox').args[1].checked, true)
+    assert.ok(ui.button('中文.txt · Both modified'))
+    assert.ok(ui.button('Save result'))
+    assert.ok(ui.nodes().some(node => node.args.slice(2).includes('当前方内容')))
+  } finally { ui.cleanup(); if (previous === undefined) delete global.window; else global.window = previous }
+})
 
 test('AI 生成与提交并排；生成中禁用、成功回填、失败保留原文并丢弃迟到响应', async (t) => {
   let files = [], resolveGeneration, calls = 0
