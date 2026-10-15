@@ -47,7 +47,7 @@ Requires Git, Node.js `^22.19.0 || >=24.0.0`, and DeepSeek Harness Web.
 If you installed `dsh-easygit-plugin` before, stop the Harness backend and run `dsh plugin --profile web remove dsh-easygit-plugin` before installing the new package below. Existing assistant session links and proposal records are imported once, preserving the original storage and any records already present under the new name. For a manual installation, replace the old mount with the `lazygit` entry in [lazygit.cordis.yml](lazygit.cordis.yml). Refresh the browser after restarting.
 
 ```sh
-npm install -g @deepseek-ai/dsh@0.2.0-rc.2
+npm install -g @deepseek-ai/dsh@0.2.1-alpha.3
 dsh plugin --profile web add dsh-lazygit-plugin@0.5.1
 dsh web
 ```
@@ -139,6 +139,7 @@ You can also install directly from the repository with `dsh plugin --profile web
 | `0.2.0-rc.2` | Passed | Original session directory |
 | `0.2.1-alpha.1` | Passed | Original session directory |
 | `0.2.1-alpha.2` | Passed | Current directory, including worktree changes |
+| `0.2.1-alpha.3` | Passed | Current directory, including worktree changes |
 
 ## Development
 
@@ -153,7 +154,7 @@ npm pack --dry-run --ignore-scripts
 CI also runs `npm run test:dsh` against each release above. To reproduce one version locally:
 
 ```sh
-npm install --prefix /tmp/lazygit-dsh-check @deepseek-ai/dsh@0.2.1-alpha.2
+npm install --prefix /tmp/lazygit-dsh-check @deepseek-ai/dsh@0.2.1-alpha.3
 DSH_INSTALL_DIR=/tmp/lazygit-dsh-check npm run test:dsh
 ```
 
