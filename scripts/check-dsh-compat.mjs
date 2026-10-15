@@ -22,6 +22,9 @@ mkdirSync(repo)
 const git = (...args) => execFileSync('git', args, { cwd: repo, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] })
 process.env.DSH_HOME = join(root, 'home')
 process.env.DSH_TELEMETRY_DISABLED = '1'
+// Make the default model selectable without real credentials or a remote model endpoint.
+process.env.DEEPSEEK_API_KEY = 'dsh-compat-placeholder'
+process.env.DEEPSEEK_BASE_URL = 'http://127.0.0.1:9'
 // Only disposable test repositories are used; no external sandbox binary is required.
 process.env.DSH_PERMISSION_MODE = 'danger-full-access'
 process.chdir(root)
@@ -93,7 +96,7 @@ try {
   assert.equal(bundle.status, 200)
   assert.match(await bundle.text(), /dsh-lazygit-plugin/)
   const directories = ctx.get('workingDirectory')
-  if (version === '0.2.1-alpha.2') assert.ok(directories, '新版工作目录服务应正常加载')
+  if (['0.2.1-alpha.2', '0.2.1-alpha.3'].includes(version)) assert.ok(directories, '新版工作目录服务应正常加载')
   if (directories) {
     const proposal = await tool('git_propose', { command: 'git branch stale-compat', intent: '检查旧建议', explanation: '兼容性测试' })
     const worktree = join(repo, 'worktree')
