@@ -96,7 +96,7 @@ try {
   assert.equal(bundle.status, 200)
   assert.match(await bundle.text(), /dsh-lazygit-plugin/)
   const directories = ctx.get('workingDirectory')
-  if (['0.2.1-alpha.2', '0.2.1-alpha.3'].includes(version)) assert.ok(directories, '新版工作目录服务应正常加载')
+  if (['0.2.1-alpha.2', '0.2.1-alpha.3', '0.2.1-alpha.4'].includes(version)) assert.ok(directories, '新版工作目录服务应正常加载')
   if (directories) {
     const proposal = await tool('git_propose', { command: 'git branch stale-compat', intent: '检查旧建议', explanation: '兼容性测试' })
     const worktree = join(repo, 'worktree')
