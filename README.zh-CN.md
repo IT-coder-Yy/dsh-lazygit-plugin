@@ -47,7 +47,7 @@
 如果之前安装过 `dsh-easygit-plugin`，请先停止 Harness 后端，执行 `dsh plugin --profile web remove dsh-easygit-plugin`，再按下方命令安装新包。已有助手会话关联和提议记录会自动导入一次，保留旧存储，也不覆盖新名称下已有的记录；手动挂载的用户还需将旧挂载替换为 [lazygit.cordis.yml](lazygit.cordis.yml) 中的 `lazygit` 条目。重启后刷新浏览器即可。
 
 ```sh
-npm install -g @deepseek-ai/dsh@0.2.1-alpha.4
+npm install -g @deepseek-ai/dsh@0.2.1-rc.2
 dsh plugin --profile web add dsh-lazygit-plugin@0.5.1
 dsh web
 ```
@@ -141,6 +141,9 @@ dsh plugin --profile web add "${PWD}"
 | `0.2.1-alpha.2` | 通过 | 当前工作目录，支持切换 worktree |
 | `0.2.1-alpha.3` | 通过 | 当前工作目录，支持切换 worktree |
 | `0.2.1-alpha.4` | 通过 | 当前工作目录，支持切换 worktree |
+| `0.2.1-alpha.5` | 通过 | 当前工作目录，支持切换 worktree |
+| `0.2.1-rc.1` | 通过 | 当前工作目录，支持切换 worktree |
+| `0.2.1-rc.2` | 通过 | 当前工作目录，支持切换 worktree |
 
 ## 开发
 
@@ -155,7 +158,7 @@ npm pack --dry-run --ignore-scripts
 CI 另对上表全部 DSH 版本运行 `npm run test:dsh`。本地复现单个版本：
 
 ```sh
-npm install --prefix /tmp/lazygit-dsh-check @deepseek-ai/dsh@0.2.1-alpha.4
+npm install --prefix /tmp/lazygit-dsh-check @deepseek-ai/dsh@0.2.1-rc.2
 DSH_INSTALL_DIR=/tmp/lazygit-dsh-check npm run test:dsh
 ```
 
