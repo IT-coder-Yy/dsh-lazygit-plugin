@@ -135,12 +135,7 @@ You can also install directly from the repository with `dsh plugin --profile web
 
 | DSH version | Real-service smoke test | Working directory |
 | --- | --- | --- |
-| `0.2.0-rc.1` | Passed | Original session directory |
-| `0.2.0-rc.2` | Passed | Original session directory |
-| `0.2.1-alpha.1` | Passed | Original session directory |
-| `0.2.1-alpha.2` | Passed | Current directory, including worktree changes |
-| `0.2.1-alpha.3` | Passed | Current directory, including worktree changes |
-| `0.2.1-alpha.4` | Passed | Current directory, including worktree changes |
+| Earlier tested versions (`0.2.0-rc.1`–`0.2.1-alpha.4`) | Passed | Original session directory; worktree changes supported from `0.2.1-alpha.2` |
 | `0.2.1-alpha.5` | Passed | Current directory, including worktree changes |
 | `0.2.1-rc.1` | Passed | Current directory, including worktree changes |
 | `0.2.1-rc.2` | Passed | Current directory, including worktree changes |
@@ -155,7 +150,7 @@ npm pack --dry-run --ignore-scripts
 
 `npm run check` runs type checks, tests, and build reproducibility checks. Git integration tests create temporary repositories for repository operations and recovery scenarios.
 
-CI also runs `npm run test:dsh` against each release above. To reproduce one version locally:
+CI also runs `npm run test:dsh` against all versions covered above, including earlier tested releases. To reproduce one version locally:
 
 ```sh
 npm install --prefix /tmp/lazygit-dsh-check @deepseek-ai/dsh@0.2.1-rc.2

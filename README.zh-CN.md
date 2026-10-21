@@ -135,12 +135,7 @@ dsh plugin --profile web add "${PWD}"
 
 | DSH 版本 | 真实服务冒烟测试 | 工作目录读取 |
 | --- | --- | --- |
-| `0.2.0-rc.1` | 通过 | 原有会话目录 |
-| `0.2.0-rc.2` | 通过 | 原有会话目录 |
-| `0.2.1-alpha.1` | 通过 | 原有会话目录 |
-| `0.2.1-alpha.2` | 通过 | 当前工作目录，支持切换 worktree |
-| `0.2.1-alpha.3` | 通过 | 当前工作目录，支持切换 worktree |
-| `0.2.1-alpha.4` | 通过 | 当前工作目录，支持切换 worktree |
+| 此前已验证版本（`0.2.0-rc.1` 至 `0.2.1-alpha.4`） | 通过 | 原有会话目录；自 `0.2.1-alpha.2` 起支持切换 worktree |
 | `0.2.1-alpha.5` | 通过 | 当前工作目录，支持切换 worktree |
 | `0.2.1-rc.1` | 通过 | 当前工作目录，支持切换 worktree |
 | `0.2.1-rc.2` | 通过 | 当前工作目录，支持切换 worktree |
@@ -155,7 +150,7 @@ npm pack --dry-run --ignore-scripts
 
 `npm run check` 执行类型检查、测试与构建一致性检查。Git 集成测试会创建临时仓库，验证仓库操作与失败恢复场景。
 
-CI 另对上表全部 DSH 版本运行 `npm run test:dsh`。本地复现单个版本：
+CI 另对上表覆盖的全部 DSH 版本（含此前已验证版本）运行 `npm run test:dsh`。本地复现单个版本：
 
 ```sh
 npm install --prefix /tmp/lazygit-dsh-check @deepseek-ai/dsh@0.2.1-rc.2
