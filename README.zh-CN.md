@@ -47,7 +47,7 @@
 如果之前安装过 `dsh-easygit-plugin`，请先停止 Harness 后端，执行 `dsh plugin --profile web remove dsh-easygit-plugin`，再按下方命令安装新包。已有助手会话关联和提议记录会自动导入一次，保留旧存储，也不覆盖新名称下已有的记录；手动挂载的用户还需将旧挂载替换为 [lazygit.cordis.yml](lazygit.cordis.yml) 中的 `lazygit` 条目。重启后刷新浏览器即可。
 
 ```sh
-npm install -g @deepseek-ai/dsh@0.2.1-rc.2
+npm install -g @deepseek-ai/dsh@0.2.1-rc.5
 dsh plugin --profile web add dsh-lazygit-plugin@0.5.1
 dsh web
 ```
@@ -131,14 +131,16 @@ dsh plugin --profile web add "${PWD}"
 
 也可直接从仓库安装：`dsh plugin --profile web add github:IT-coder-Yy/dsh-lazygit-plugin`。
 
+DSH `0.2.2-alpha.2` 请使用上方仓库安装方式，并升级至 Node.js `>=24.9.0`；npm 版 `0.5.1` 尚未包含本次适配。
+
 ## 兼容性
 
 | DSH 版本 | 真实服务冒烟测试 | 工作目录读取 |
 | --- | --- | --- |
-| 此前已验证版本（`0.2.0-rc.1` 至 `0.2.1-alpha.4`） | 通过 | 原有会话目录；自 `0.2.1-alpha.2` 起支持切换 worktree |
-| `0.2.1-alpha.5` | 通过 | 当前工作目录，支持切换 worktree |
-| `0.2.1-rc.1` | 通过 | 当前工作目录，支持切换 worktree |
-| `0.2.1-rc.2` | 通过 | 当前工作目录，支持切换 worktree |
+| 此前已验证版本（`0.2.0-rc.1` 至 `0.2.1-rc.3`） | 通过 | 原有会话目录；自 `0.2.1-alpha.2` 起支持切换 worktree |
+| `0.2.1-rc.4` | 通过 | 当前工作目录，支持切换 worktree |
+| `0.2.1-rc.5` | 通过 | 当前工作目录，支持切换 worktree |
+| `0.2.2-alpha.2` | 通过（仓库版） | 当前工作目录，支持切换 worktree |
 
 ## 开发
 
@@ -153,7 +155,7 @@ npm pack --dry-run --ignore-scripts
 CI 另对上表覆盖的全部 DSH 版本（含此前已验证版本）运行 `npm run test:dsh`。本地复现单个版本：
 
 ```sh
-npm install --prefix /tmp/lazygit-dsh-check @deepseek-ai/dsh@0.2.1-rc.2
+npm install --prefix /tmp/lazygit-dsh-check @deepseek-ai/dsh@0.2.1-rc.5
 DSH_INSTALL_DIR=/tmp/lazygit-dsh-check npm run test:dsh
 ```
 
