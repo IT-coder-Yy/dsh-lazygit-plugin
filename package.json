@@ -48,7 +48,7 @@
     "url": "https://github.com/IT-coder-Yy/dsh-lazygit-plugin/issues"
   },
   "files": [
-    "assets/preview.png",
+    "assets/preview.jpg",
     "lib/*.js",
     "lib/types/**/*.d.ts",
     "lazygit.cordis.yml",

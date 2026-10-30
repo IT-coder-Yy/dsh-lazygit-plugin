@@ -19,7 +19,7 @@
 
 ## 效果预览
 
-![DSH LazyGit Plugin 变更视图与 Git 快捷操作](./assets/preview.png)
+![DSH LazyGit Plugin 变更视图与 Git 快捷操作](./assets/preview.jpg)
 
 ## Git 可视化，操作更简单
 

@@ -19,7 +19,7 @@ English · [简体中文](README.zh-CN.md)
 
 ## Preview
 
-![DSH LazyGit Plugin changes view and quick Git actions](./assets/preview.png)
+![DSH LazyGit Plugin changes view and quick Git actions](./assets/preview.jpg)
 
 ## Git you can see and use
 
