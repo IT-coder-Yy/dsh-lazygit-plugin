@@ -42,13 +42,13 @@ The command log at the bottom of the workbench shows the Git commands submitted 
 
 ## Quick start
 
-Requires Git, Node.js `^22.19.0 || >=24.0.0`, and DeepSeek Harness Web.
+Requires Git, Node.js `^22.19.0 || >=24.0.0`, and DeepSeek Harness Web. DSH `0.2.2-alpha.2` requires Node.js `>=24.9.0`.
 
 If you installed `dsh-easygit-plugin` before, stop the Harness backend and run `dsh plugin --profile web remove dsh-easygit-plugin` before installing the new package below. Existing assistant session links and proposal records are imported once, preserving the original storage and any records already present under the new name. For a manual installation, replace the old mount with the `lazygit` entry in [lazygit.cordis.yml](lazygit.cordis.yml). Refresh the browser after restarting.
 
 ```sh
 npm install -g @deepseek-ai/dsh@0.2.1-rc.5
-dsh plugin --profile web add dsh-lazygit-plugin@0.5.1
+dsh plugin --profile web add dsh-lazygit-plugin@0.5.2
 dsh web
 ```
 
@@ -131,8 +131,6 @@ dsh plugin --profile web add "${PWD}"
 
 You can also install directly from the repository with `dsh plugin --profile web add github:IT-coder-Yy/dsh-lazygit-plugin`.
 
-For DSH `0.2.2-alpha.2`, use the repository installation above with Node.js `>=24.9.0`; npm version `0.5.1` does not include this compatibility fix.
-
 ## Compatibility
 
 | DSH version | Real-service smoke test | Working directory |
@@ -140,7 +138,7 @@ For DSH `0.2.2-alpha.2`, use the repository installation above with Node.js `>=2
 | Earlier tested versions (`0.2.0-rc.1`–`0.2.1-rc.3`) | Passed | Original session directory; worktree changes supported from `0.2.1-alpha.2` |
 | `0.2.1-rc.4` | Passed | Current directory, including worktree changes |
 | `0.2.1-rc.5` | Passed | Current directory, including worktree changes |
-| `0.2.2-alpha.2` | Passed (repository version) | Current directory, including worktree changes |
+| `0.2.2-alpha.2` | Passed | Current directory, including worktree changes |
 
 ## Development
 
