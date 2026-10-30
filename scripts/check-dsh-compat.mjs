@@ -70,7 +70,11 @@ try {
   assert.ifError(error)
   const action = (name, extra = {}) => post({ action: name, sessionId, ...extra })
   const tool = async (name, args = {}) => {
-    const result = await ctx.get('tools').execute({ callId: randomUUID(), name, arguments: args, agent, signal: AbortSignal.timeout(30_000) })
+    const registry = ctx.get('tools'), callId = randomUUID(), signal = AbortSignal.timeout(30_000)
+    // DSH 0.2.2 executes batches; earlier releases execute one call directly.
+    const result = typeof registry.executable === 'function'
+      ? (await registry.execute({ agent, signal, calls: [{ type: 'tool-call', id: callId, name, arguments: JSON.stringify(args) }] })).results[0].result
+      : await registry.execute({ callId, name, arguments: args, agent, signal })
     assert.equal(result.isError, false, JSON.stringify(result))
     assert.equal(result.value.ok, true, JSON.stringify(result.value))
     return result.value
@@ -96,7 +100,7 @@ try {
   assert.equal(bundle.status, 200)
   assert.match(await bundle.text(), /dsh-lazygit-plugin/)
   const directories = ctx.get('workingDirectory')
-  if (['0.2.1-alpha.2', '0.2.1-alpha.3', '0.2.1-alpha.4', '0.2.1-alpha.5', '0.2.1-rc.1', '0.2.1-rc.2'].includes(version)) assert.ok(directories, '新版工作目录服务应正常加载')
+  if (!['0.2.0-rc.1', '0.2.0-rc.2', '0.2.1-alpha.1'].includes(version)) assert.ok(directories, '新版工作目录服务应正常加载')
   if (directories) {
     const proposal = await tool('git_propose', { command: 'git branch stale-compat', intent: '检查旧建议', explanation: '兼容性测试' })
     const worktree = join(repo, 'worktree')
