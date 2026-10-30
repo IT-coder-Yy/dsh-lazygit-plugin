@@ -27,7 +27,6 @@ function fixture(saved = {}, legacySaved = {}) {
   const parent = agent('main', [{ seq: 0, type: 'user/message', data: { content: [{ type: 'text', text: '原始目标' }] } }])
   const model = { provider: 'provider', model: 'model-a', reasoningEffort: 'high' }
   const controller = {
-    async inspect(id) { const a = agents.get(id); if (!a) throw new Error('missing'); return { meta: a.session.header, events: structuredClone(a.session.snapshotEvents()) } },
     async fork({ sessionId, atSeq }) { const id = 'child-' + ++counter; agent(id, structuredClone(agents.get(sessionId).session.snapshotEvents().filter(e => e.seq <= atSeq))); return { sessionId: id } },
     async create() { const id = 'child-' + ++counter; agent(id); return { sessionId: id } },
     async resolveAgent(id) { return { agent: agents.get(id) } },
@@ -36,7 +35,12 @@ function fixture(saved = {}, legacySaved = {}) {
   }
   const services = {
     tools, agents: { get: id => agents.get(id) }, sessionController: controller,
-    sessionQuery: { observeSession: async () => ({ projections: { values: { modelSelection: { next: structuredClone(model) } } }, [Symbol.dispose]() {} }) },
+    sessionQuery: { observeSession: async id => {
+      const a = agents.get(id)
+      if (!a) throw new Error('missing')
+      return { header: a.session.header, events: structuredClone(a.session.snapshotEvents()),
+        projections: { values: { modelSelection: { next: structuredClone(model) } } }, [Symbol.dispose]() {} }
+    } },
     storage: { backend: { get: () => ({ kv: { open: async ({ name, tables }) => {
       const records = stores[name] ??= {}
       for (const table of tables) records[table] ??= {}
@@ -67,6 +71,20 @@ test('并发打开幂等；同目录不同主会话隔离；仅初始化模型�
   assert.equal((await restored.open('main')).sessionId, first.sessionId)
   assert.equal(f.modelChanges.length, 2)
   await assert.rejects(f.service.open(first.sessionId), /嵌套/)
+})
+
+test('无 inspect 接口时，冷侧会话仍能读取回复并释放观察句柄', async () => {
+  const f = fixture(), opened = await f.service.open('main')
+  f.agents.get(opened.sessionId).session.snapshotEvents().push({
+    seq: 1, time: 1000, type: 'assistant/message',
+    data: { message: { content: [{ type: 'text', text: '已读取仓库状态' }] } },
+  })
+  f.ctx.get('agents').get = () => undefined
+  const query = f.ctx.get('sessionQuery'), observe = query.observeSession
+  let released = 0
+  query.observeSession = async id => ({ ...await observe(id), [Symbol.dispose]() { released++ } })
+  assert.deepEqual(await f.service.status('main'), { running: false, reply: '已读取仓库状态', error: '' })
+  assert.equal(released, 1)
 })
 
 test('改名后沿用旧侧会话及已同步位置，新背景使用新标识', async () => {

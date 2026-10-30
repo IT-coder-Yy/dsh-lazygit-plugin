@@ -13,6 +13,7 @@ export declare class SideChatService {
     parentOf(sessionId: string): string | undefined;
     private serial;
     private configure;
+    private inspect;
     open(parent: string): Promise<{
         ok: true;
         sessionId: string;
