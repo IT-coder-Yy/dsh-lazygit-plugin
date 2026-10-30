@@ -67,48 +67,25 @@ minimumReleaseAgeExclude:
 
 ## Common workflows
 
-### Review changes and generate a commit message
+### 1. Review, commit, and push
 
-In **Changes**, select a file from the staged or unstaged directory tree to inspect its diff. Stage the changes you want to commit, then enter a message or click **AI Generate**. Manual messages can include a subject and a multiline body.
+In **Changes**, select a file to review its diff, stage the changes you want, then enter a message or click **AI Generate**. Review the message, commit, and open **Sync → Push**. New branches can set their upstream when pushing.
 
-AI generation uses the main session's selected model, falling back to the default model. It sends the staged diff and bounded project context (tracked filenames, recent commit subjects, and staged README/package metadata) to that model, then fills in a single-line Chinese Conventional Commit message for you to review. It requires a configured model and staged changes; an oversized diff must be split into smaller staged batches. If the index changes during generation, generate again before committing.
+AI generation requires a configured model and sends it the staged diff and limited project context. Check the generated message before committing.
 
-### Work with the Git assistant
+### 2. Switch branches, merge, and resolve conflicts
 
-Open **Suggestions → Expand Git assistant chat**. The assistant starts with the main conversation's context and model selection; later conversation updates are synchronized, while its model settings can be changed independently. Context synchronization alone does not start an assistant turn.
+Create or switch branches in **Branches**. To set unfinished work aside, save it in **Stashes**; **apply** restores it while keeping the stash, and **pop** removes the stash after successful restoration.
 
-Describe your goal, review the proposed commands and their risks, then execute them in the workbench. The assistant can read repository state and diffs and register proposals; repository changes require your click. Multi-step proposals run in order and stop at the first failure. High-risk proposals require an additional risk acknowledgment, and changes to the repository or session working directory invalidate pending proposals.
+With a clean worktree, open **Merge**, select a branch, preview its changes, and choose a merge method. Fetch first when using a remote branch. If conflicts occur, edit the result in **Conflicts**, then **save → mark resolved → continue**.
 
-You can also copy commands for manual execution and use **Recheck** to check supported expected outcomes. A detected repository change alone does not prove that a command succeeded. Completed or failed proposals cannot be executed again; retry through a new proposal.
+### 3. Fix an existing commit
 
-When an operation fails, the workbench retains command output and repository diagnostics. Recognized cases can offer a corrective proposal; failures requiring assistant analysis are sent to the Git assistant automatically. You can cancel or retry analysis, or expand the chat to provide missing information. Any proposed repair still requires your confirmation before execution.
+Open **Changes → Commit edits** to edit the latest message, add staged changes to the latest commit, or undo it while keeping your changes. These actions rewrite history, so check whether the commit has already been pushed. To reverse a commit with a new commit, select it in **History** and choose **Revert this commit**; this requires a clean worktree and index.
 
-### Amend, undo, or revert a commit
+### 4. Use the Git assistant for complex operations
 
-Open **Changes → Commit edits** for the latest commit, or click a commit in **History**.
-
-- **Edit the latest message** changes only the message, preserving staged and working-tree changes.
-- **Amend the latest commit** adds all staged changes while keeping its message.
-- **Undo the latest commit, keep changes** uses `reset --soft` to return to its first parent; the initial commit cannot be undone this way.
-- **Revert a commit** creates a reverse commit and requires a clean worktree and index. For merge commits, select the mainline parent. Conflicts can be continued, aborted, or skipped from Conflict resolution.
-
-These actions require confirmation. Amend and undo rewrite local history and can affect published commits; the plugin never force-pushes automatically. If the branch, HEAD, or index changes after loading, refresh before confirming again.
-
-### Preview and merge branches
-
-Open **Merge**, select a local or fetched remote branch, and preview its incoming commits and file changes. Choose normal merge, fast-forward only, or squash. Squash stages the combined changes for you to finish as one commit.
-
-Merging requires a clean worktree. Remote sources use locally fetched references, so fetch first for current data. The preview compares the source with the common ancestor; it does not predict conflicts or show the final merge result. A changed branch tip requires a new preview. You can abort an unfinished merge, including squash, but cannot abort a completed merge.
-
-### Resolve conflicts visually
-
-In **Conflicts**, compare the current side, incoming side, and editable result with line numbers and commit references. Choose either side or both per block, or edit the result; then **save → mark resolved → continue**. Merge, Rebase, Cherry-pick, and Revert use this workflow. Abort and supported skip actions require confirmation.
-
-During Rebase, the current side is the target branch plus replayed commits; the incoming side is the commit being replayed. Unresolved markers block resolution, and changed files invalidate an old snapshot. Binary conflicts support whole-side selection; text editing supports up to 48 KiB per version. Use external tools for larger files, symlinks, or submodules. Unsaved drafts last only for the current page and do not survive a reload.
-
-### Save work with Stash
-
-In **Stashes**, select all or individual files and optionally include untracked files. Selected-file stashes preserve unrelated changes. Review a stash before applying it; **apply** retains it, while **pop** removes it only after successful restoration. Conflicts retain the stash and link to Conflict resolution. Creating a branch from a stash requires a clean worktree and starts at the stash's original base.
+Open **Suggestions → Expand Git assistant chat** and describe your goal. Review the proposed commands and risks, then confirm execution. Multi-step proposals stop at the first failure. You can ask the assistant to analyze failures; proposed repairs also require confirmation.
 
 ## Update, remove, or install from source
 
