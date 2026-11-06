@@ -113,7 +113,7 @@ You can also install directly from the repository with `dsh plugin --profile web
 | DSH version | Real-service smoke test | Working directory |
 | --- | --- | --- |
 | Earlier tested versions (`0.2.0-rc.1`–`0.2.1-rc.5`) | Passed | Original session directory; worktree changes supported from `0.2.1-alpha.2` |
-| `0.2.2-alpha.2` | Passed | Current directory, including worktree changes |
+| `0.2.2-alpha.2` | Passed ([pinned release-time dependencies](.github/fixtures/dsh-0.2.2-alpha.2.json)) | Current directory, including worktree changes |
 | `0.2.2-alpha.3` | Passed | Current directory, including worktree changes |
 | `0.2.2-rc.1` | Passed | Current directory, including worktree changes |
 

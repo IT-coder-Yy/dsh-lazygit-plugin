@@ -113,7 +113,7 @@ dsh plugin --profile web add "${PWD}"
 | DSH 版本 | 真实服务冒烟测试 | 工作目录读取 |
 | --- | --- | --- |
 | 此前已验证版本（`0.2.0-rc.1` 至 `0.2.1-rc.5`） | 通过 | 原有会话目录；自 `0.2.1-alpha.2` 起支持切换 worktree |
-| `0.2.2-alpha.2` | 通过 | 当前工作目录，支持切换 worktree |
+| `0.2.2-alpha.2` | 通过（[固定为发布时的依赖](.github/fixtures/dsh-0.2.2-alpha.2.json)） | 当前工作目录，支持切换 worktree |
 | `0.2.2-alpha.3` | 通过 | 当前工作目录，支持切换 worktree |
 | `0.2.2-rc.1` | 通过 | 当前工作目录，支持切换 worktree |
 
