@@ -45,5 +45,10 @@ jobs:
         env:
           DSH_INSTALL_DIR: ${{ runner.temp }}/dsh-compat
         run: |
+          # Keep this historical alpha on its original Cordis dependency versions.
+          if [ "$DSH_VERSION" = "0.2.2-alpha.2" ]; then
+            mkdir -p "$DSH_INSTALL_DIR"
+            cp .github/fixtures/dsh-0.2.2-alpha.2.json "$DSH_INSTALL_DIR/package.json"
+          fi
           npm install --prefix "$DSH_INSTALL_DIR" --no-audit --no-fund "@deepseek-ai/dsh@$DSH_VERSION"
           npm run test:dsh
