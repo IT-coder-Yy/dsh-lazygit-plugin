@@ -48,7 +48,7 @@
 
 ```sh
 npm install -g @deepseek-ai/dsh@0.2.2-rc.1
-dsh plugin --profile web add dsh-lazygit-plugin@0.5.2
+dsh plugin --profile web add dsh-lazygit-plugin@0.5.3
 dsh web
 ```
 
